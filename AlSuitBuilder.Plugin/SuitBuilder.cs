@@ -19,7 +19,7 @@ namespace AlSuitBuilder.Plugin
         public static SuitBuilderPlugin Current { get { return _instance; } }
 
         internal SuiteBuilderType PluginType { get; private set; } = SuiteBuilderType.Unknown;
-        internal SuiteBuilderState PluginState { get; private set; } = SuiteBuilderState.Offline;
+        internal SuiteBuilderState PluginState { get; private set; } = SuiteBuilderState.Unknown;
         internal NetServiceHost PluginHost { get; private set; } = null;
 
         private static SuitBuilderPlugin _instance;

@@ -70,7 +70,7 @@ namespace AlSuitBuilder.Server
             {
                 var nc = IntegratedServer.Clients[c];
                // nc.AddMessageHandler<WelcomeMessage>(WelcomeMessageHandler);
-                nc.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = c }, new WelcomeMessage() { Message = "Servers Rock." });
+                nc.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = c }, new WelcomeMessage() { ServerState = Shared.SuiteBuilderState.Waiting });
                 _clientSubs.Add(c);
             });
 
