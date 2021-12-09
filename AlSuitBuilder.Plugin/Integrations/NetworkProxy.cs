@@ -32,8 +32,7 @@ namespace AlSuitBuilder.Plugin.Integrations
             {
                 Action<Action> runOnMainThread = (a) => { GameThreadActionQueue.Enqueue(a); };
                 Action<string> log = (s) => { runOnMainThread.Invoke(() => Utils.WriteLog("Network:" + s)); };
-
-                IntegratedClient = new UBNetworking.UBClient("127.0.0.1", 16753, log, runOnMainThread, new AlSuitSerializationBinder());
+                IntegratedClient = new UBNetworking.UBClient("127.0.0.1", 16753, log, runOnMainThread, new AlSerializationBinder());
                 IntegratedClient.AddMessageHandler<WelcomeMessage>(WelcomeMessageHandler);
                 _started = true;
             }
@@ -68,6 +67,9 @@ namespace AlSuitBuilder.Plugin.Integrations
         {
             IntegratedClient.SendMessage(message);
         }
+
+
+    
 
     }
 }

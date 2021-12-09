@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuiteBuilder.Shared", "Al
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuitBuilder.Server", "AlSuitBuilder.Server\AlSuitBuilder.Server.csproj", "{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UBNetworking", "UBNetworking\UBNetworking.csproj", "{2829FC6E-2BEC-4259-AA51-6CC180D3834B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,12 +47,20 @@ Global
 		{6671E20E-14B0-4659-A4D3-3942781F4CAA}.Release|x86.Build.0 = Release|x86
 		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|x86.Build.0 = Debug|Any CPU
+		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|x86.ActiveCfg = Debug|x86
+		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Debug|x86.Build.0 = Debug|x86
 		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|x86.ActiveCfg = Release|Any CPU
-		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|x86.Build.0 = Release|Any CPU
+		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|x86.ActiveCfg = Release|x86
+		{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}.Release|x86.Build.0 = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Debug|Any CPU.ActiveCfg = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Debug|Any CPU.Build.0 = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Debug|x86.ActiveCfg = Debug|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Debug|x86.Build.0 = Debug|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Release|Any CPU.ActiveCfg = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Release|Any CPU.Build.0 = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Release|x86.ActiveCfg = Release|x86
+		{2829FC6E-2BEC-4259-AA51-6CC180D3834B}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

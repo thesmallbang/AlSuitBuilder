@@ -9,8 +9,8 @@ namespace AlSuiteBuilder.Shared.Messages.Client
     [Serializable]
     public class ReadyForWorkMessage : INetworkMessage
     {
-        public string Account;
-        public string Character;
-        public string Server;
+        public string Account { get; set; }
+        public string Character { get; set; }
+        public string Server { get; set; }
     }
 }

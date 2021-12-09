@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="Messages\Client\ReadyForWorkMessage.cs" />
     <Compile Include="Messages\WelcomeMessage.cs" />
+    <Compile Include="SerializationBinder.cs" />
     <Compile Include="SuitBuilderState.cs" />
     <Compile Include="SuitBuilderType.cs" />
     <Compile Include="Utils.cs" />

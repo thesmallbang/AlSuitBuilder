@@ -1,4 +1,5 @@
-﻿using AlSuiteBuilder.Shared.Messages;
+﻿using AlSuiteBuilder.Shared;
+using AlSuiteBuilder.Shared.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace AlSuitBuilder.Plugin.Extensions
 
         internal static void SendMessage(this UBClient client, INetworkMessage message)
         {
+            Utils.WriteToChat("Sending a message of " + message.GetType().Name);
             client.SendObject(new UBNetworking.Lib.MessageHeader() {
             Type = UBNetworking.Lib.MessageHeaderType.Serialized,
             SendingClientId = client.ClientId,

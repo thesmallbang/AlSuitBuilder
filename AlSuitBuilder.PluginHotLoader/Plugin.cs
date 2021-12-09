@@ -81,8 +81,6 @@ namespace AlSuitBuilder.PluginHotLoader
                 assemblyTimer.Start();
 
                 // subscribe to built in decal events
-                ServerDispatch += FilterCore_ServerDispatch;
-                ClientDispatch += FilterCore_ClientDispatch;
                 Core.PluginInitComplete += Core_PluginInitComplete;
                 Core.PluginTermComplete += Core_PluginTermComplete;
 
@@ -101,7 +99,11 @@ namespace AlSuitBuilder.PluginHotLoader
         private void AssemblyTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             if (!isLoaded && pluginsReady)
+            {
+                assemblyTimer.Stop();
                 LoadPluginAssembly();
+            }
+
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)

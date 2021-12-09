@@ -2,6 +2,7 @@
 using AlSuitBuilder.Shared;
 using AlSuiteBuilder.Shared;
 using AlSuiteBuilder.Shared.Messages;
+using AlSuiteBuilder.Shared.Messages.Client;
 using Decal.Adapter;
 using Decal.Adapter.Wrappers;
 using System;
@@ -26,7 +27,9 @@ namespace AlSuitBuilder.Plugin
         private static SuitBuilderPlugin _instance;
         private CoreManager _core = null;
 
-        private NetworkProxy net = new NetworkProxy();
+        private Queue<Action> _actionQueue = new Queue<Action>();
+
+        private NetworkProxy _net = new NetworkProxy();
 
         public void Startup(NetServiceHost host)
         {
@@ -39,13 +42,15 @@ namespace AlSuitBuilder.Plugin
 
             PluginHost = host;
             PluginHost.Actions.AddChatText("Builders Startup", 1);
-            net.Startup();
+            _actionQueue.Clear(); 
 
             _core = CoreManager.Current;
             _core.CharacterFilter.LoginComplete += CharacterFilter_LoginComplete;
             _core.CharacterFilter.Logoff += CharacterFilter_Logoff;
+            _net.OnWelcomeMessage += Net_OnWelcomeMessage;
 
-            net.OnWelcomeMessage += Net_OnWelcomeMessage;
+            _net.Startup();
+
 
         }
 
@@ -64,41 +69,58 @@ namespace AlSuitBuilder.Plugin
             {
                 // send a request for action
                 state = SuitBuilderState.Waiting;
+               AddAction(()=> SendReadyForWork());
             }
 
             SetState(state);                    
-            
+        }
 
+        private void AddAction(Action action)
+        {
+            Utils.WriteToChat("Action added");
+            _actionQueue.Enqueue(action);
         }
 
         public void Tick()
         {
-            net.Tick();
+            _net.Tick();
+
+            try
+            {
+                if (_actionQueue.Any())
+                {
+                    var action = _actionQueue.Dequeue();
+                    action.Invoke();
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.LogException(ex);
+            }
+
         }
 
         private void CharacterFilter_LoginComplete(object sender, EventArgs e)
         {
             PluginHost.Actions.AddChatText("[AlSuitBuilder] Initializing", 1);
-            net.Startup();
+            _net.Startup();
 
         }
 
         private void CharacterFilter_Logoff(object sender, LogoffEventArgs e)
         {
-            net?.Shutdown();
+            _net?.Shutdown();
         }
 
-       
-
-        public void Shutdown()
+       public void Shutdown()
         {
 
-            net?.Shutdown();
+            _net?.Shutdown();
 
             _core.CharacterFilter.LoginComplete -= CharacterFilter_LoginComplete;
             _core.CharacterFilter.Logoff -= CharacterFilter_Logoff;
 
-            net.OnWelcomeMessage -= Net_OnWelcomeMessage;
+            _net.OnWelcomeMessage -= Net_OnWelcomeMessage;
             PluginHost?.Actions.AddChatText("Builders Shutdown", 1);
 
         }
@@ -121,6 +143,11 @@ namespace AlSuitBuilder.Plugin
             PluginState = state;
         }
 
+        private void SendReadyForWork()
+        {
+            Utils.WriteToChat("Sending ready for work");
+            _net.Send(new ReadyForWorkMessage() {Account = _core.CharacterFilter.AccountName, Server = _core.CharacterFilter.Server, Character = _core.CharacterFilter.Name });
+        }
 
     }
 }

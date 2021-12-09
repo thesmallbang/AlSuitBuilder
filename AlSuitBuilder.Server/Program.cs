@@ -1,4 +1,5 @@
-﻿using AlSuiteBuilder.Shared.Messages;
+﻿using AlSuiteBuilder.Shared;
+using AlSuiteBuilder.Shared.Messages;
 using AlSuiteBuilder.Shared.Messages.Client;
 using System;
 using System.Collections.Concurrent;
@@ -15,11 +16,11 @@ namespace AlSuitBuilder.Server
         static bool Running = true;
 
         public static UBServer IntegratedServer { get; private set; }
-        private static ConcurrentQueue<Action> GameThreadActionQueue = new ConcurrentQueue<Action>();
+        private static ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
         private static List<int> _clientSubs = new List<int>();
 
 
-        private static List<WorkItem> PendingWork = new List<WorkItem>();
+        private static List<WorkItem> PendingWork = new List<WorkItem>() { new WorkItem() { } };
         
 
         static void Main(string[] args)
@@ -27,8 +28,8 @@ namespace AlSuitBuilder.Server
 
             try
             {
-                Action<string> logs = (s) => { Console.WriteLine(s); };
-                IntegratedServer = new UBNetworking.UBServer("127.0.0.1", 16753, logs);
+                Action<string> logs = (s) => { _actionQueue.Enqueue(() => Console.WriteLine("SVRLOG: " + s));  };
+                IntegratedServer = new UBNetworking.UBServer("127.0.0.1", 16753, logs, new AlSerializationBinder());
                 IntegratedServer.OnClientConnected += IntegratedServer_OnClientConnected;
                 IntegratedServer.OnClientDisconnected += IntegratedServer_OnClientDisconnected;
 
@@ -44,7 +45,7 @@ namespace AlSuitBuilder.Server
             while (Running)
             {
                 Action nextAction = null;
-                GameThreadActionQueue.TryDequeue(out nextAction);
+                _actionQueue.TryDequeue(out nextAction);
                 if (nextAction != null)
                     nextAction.Invoke();
                 System.Threading.Thread.Sleep(100);
@@ -60,6 +61,7 @@ namespace AlSuitBuilder.Server
                 if (IntegratedServer.Clients.ContainsKey(c))
                 {
                     var nc = IntegratedServer.Clients[c];
+                    nc.OnMessageReceived -= Nc_OnMessageReceived;
                     nc.RemoveMessageHandler<ReadyForWorkMessage>(ReadyForWorkMessageHandler);
                     _clientSubs.Remove(c);
                 }
@@ -72,9 +74,7 @@ namespace AlSuitBuilder.Server
         /// </summary>
         private static void ReadyForWorkMessageHandler(UBNetworking.Lib.MessageHeader header, ReadyForWorkMessage message)
         {
-            
-
-
+            _actionQueue.Enqueue(() =>  Console.WriteLine($"Client ready for work: {message.Account} {message.Server} {message.Character}"));
         }
 
         private static void IntegratedServer_OnClientConnected(object sender, EventArgs e)
@@ -84,15 +84,23 @@ namespace AlSuitBuilder.Server
 
             newClients.ForEach(c =>
             {
+                
                 var nc = IntegratedServer.Clients[c];
+                nc.OnMessageReceived += Nc_OnMessageReceived;
                 nc.AddMessageHandler<ReadyForWorkMessage>(ReadyForWorkMessageHandler);
+                
                 nc.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = c }, 
-                    new WelcomeMessage() { ServerState = Shared.SuitBuilderState.Idle });
+                    new WelcomeMessage() { ServerState = PendingWork.Any() ? Shared.SuitBuilderState.Building : Shared.SuitBuilderState.Idle });
                 _clientSubs.Add(c);
             });
 
 
         }
 
+        private static void Nc_OnMessageReceived(object sender, UBNetworking.Lib.OnMessageEventArgs e)
+        {
+           _actionQueue.Enqueue(() =>  Console.WriteLine("MsgRcv: " + e.Header.Type.ToString()));
+            _actionQueue.Enqueue(() => {   });
+        }
     }
 }
