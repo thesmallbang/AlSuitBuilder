@@ -13,10 +13,6 @@ namespace AlSuitBuilder.PluginHotLoader
     [FriendlyName("SuitCollector_HotReload")]
     public class SuitCollectorHotReload : FilterBase
     {
-        public string AccountName;
-        public string CharacterName;
-        public string ServerName;
-        public Dictionary<int, string> Characters = new Dictionary<int, string>();
 
         private object pluginInstance;
         private Assembly pluginAssembly;
@@ -27,9 +23,10 @@ namespace AlSuitBuilder.PluginHotLoader
         private MethodInfo tickMethod;
         private bool isLoaded;
 
+        // process queues on the plugin at this interval
         private Timer tickTimer = new Timer(100);
+        // limit how often hot reload is triggered since we are referencing build output it is firing multiple times too quickly.
         private Timer assemblyTimer = new Timer(3000);
-
 
 
         /// <summary>
@@ -77,6 +74,7 @@ namespace AlSuitBuilder.PluginHotLoader
                 tickTimer.Elapsed += Timer_Elapsed;
                 tickTimer.Enabled = true;
                 tickTimer.Start();
+
                 assemblyTimer.Elapsed += AssemblyTimer_Elapsed;
                 assemblyTimer.Enabled = true;
                 assemblyTimer.AutoReset = true;
@@ -126,63 +124,6 @@ namespace AlSuitBuilder.PluginHotLoader
         }
         #endregion
 
-        #region Decal Event Handlers
-        /// <summary>
-        /// Decal ServerDispatch event handler.  This is called when ac client recieves a network message.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void FilterCore_ServerDispatch(object sender, NetworkMessageEventArgs e)
-        {
-            try
-            {
-                // see https://acemulator.github.io/protocol/ for protocol documentation
-                switch (e.Message.Type)
-                {
-                    case 0xF658: // LoginCharacterSet S2C
-                        AccountName = e.Message.Value<string>("zonename");
-                        int characterCount = e.Message.Value<int>("characterCount");
-                        MessageStruct characters = e.Message.Struct("characters");
-                        Characters.Clear();
-
-                        for (int i = 0; i < characterCount; i++)
-                        {
-                            int id = characters.Struct(i).Value<int>("character");
-                            string name = characters.Struct(i).Value<string>("name");
-                            Characters.Add(id, name);
-                        }
-                        break;
-
-                    case 0xF7E1: // Login_WorldInfo
-                        ServerName = e.Message.Value<string>("server");
-                        break;
-                }
-            }
-            catch (Exception ex) { Utils.LogException(ex); }
-        }
-
-        /// <summary>
-        /// Handle decal ClientDispatch event.  This is called when ac client emits a network message
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void FilterCore_ClientDispatch(object sender, NetworkMessageEventArgs e)
-        {
-            try
-            {
-                if (e.Message.Type == 0xF657)
-                { // SendEnterWorld C2S
-                    int loginId = Convert.ToInt32(e.Message["character"]);
-
-                    if (Characters.ContainsKey(loginId))
-                    {
-                        CharacterName = Characters[loginId];
-                    }
-                }
-            }
-            catch (Exception ex) { Utils.LogException(ex); }
-        }
-
         private void Core_PluginInitComplete(object sender, EventArgs e)
         {
             try
@@ -202,7 +143,6 @@ namespace AlSuitBuilder.PluginHotLoader
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
-        #endregion
 
         #region Plugin Loading/Unloading
         internal void LoadPluginAssembly()

@@ -8,10 +8,15 @@ using System.Threading.Tasks;
 namespace AlSuiteBuilder.Shared.Messages
 {
     [Serializable]
-    public class WelcomeMessage
+    public class WelcomeMessage  : INetworkMessage
     {
-        public SuiteBuilderState ServerState { get; set; }
+        public SuitBuilderState ServerState { get; set; }
 
+
+    }
+
+    public interface INetworkMessage
+    {
 
     }
 }

@@ -70,9 +70,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\UBExtensions.cs" />
     <Compile Include="Integrations\AlSuitSerializationBinder.cs" />
     <Compile Include="Integrations\NetworkProxy.cs" />
-    <Compile Include="SuitBuilder.cs" />
+    <Compile Include="SuitBuilderPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

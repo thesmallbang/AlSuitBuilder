@@ -1,6 +1,6 @@
 ﻿namespace AlSuitBuilder.Shared
 {
-    public enum SuiteBuilderType
+    public enum SuitBuilderType
     {
         Unknown = 0,
         Dropoff = 10,

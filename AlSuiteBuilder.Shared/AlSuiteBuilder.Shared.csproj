@@ -63,9 +63,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Messages\Client\ReadyForWorkMessage.cs" />
     <Compile Include="Messages\WelcomeMessage.cs" />
-    <Compile Include="SuiteBuilderState.cs" />
-    <Compile Include="SuiteBuilderType.cs" />
+    <Compile Include="SuitBuilderState.cs" />
+    <Compile Include="SuitBuilderType.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

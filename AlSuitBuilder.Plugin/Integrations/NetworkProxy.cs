@@ -1,4 +1,5 @@
-﻿using AlSuiteBuilder.Shared;
+﻿using AlSuitBuilder.Plugin.Extensions;
+using AlSuiteBuilder.Shared;
 using AlSuiteBuilder.Shared.Messages;
 using System;
 using System.Collections.Concurrent;
@@ -17,7 +18,8 @@ namespace AlSuitBuilder.Plugin.Integrations
         private UBNetworking.UBClient IntegratedClient;
         private bool _started;
 
-
+        public delegate void DOnWelcomeMessage(WelcomeMessage welcomeMessage);
+        public event DOnWelcomeMessage OnWelcomeMessage;
 
         public void Startup()
         {
@@ -26,10 +28,9 @@ namespace AlSuitBuilder.Plugin.Integrations
             if (_started)
                 return;
 
-            Action<Action> runOnMainThread = (a) => { GameThreadActionQueue.Enqueue(a); };
-
             try
             {
+                Action<Action> runOnMainThread = (a) => { GameThreadActionQueue.Enqueue(a); };
                 Action<string> log = (s) => { runOnMainThread.Invoke(() => Utils.WriteLog("Network:" + s)); };
 
                 IntegratedClient = new UBNetworking.UBClient("127.0.0.1", 16753, log, runOnMainThread, new AlSuitSerializationBinder());
@@ -40,8 +41,6 @@ namespace AlSuitBuilder.Plugin.Integrations
             {
                 Utils.WriteLog("ClientIssue " + ex.Message);
             }
-
-
         }
 
         internal void Tick()
@@ -52,15 +51,22 @@ namespace AlSuitBuilder.Plugin.Integrations
                 nextAction.Invoke();
         }
 
-        private void WelcomeMessageHandler(MessageHeader arg1, WelcomeMessage arg2)
+        private void WelcomeMessageHandler(MessageHeader header, WelcomeMessage message)
         {
-            
+            if (message == null)
+                return;
 
+            OnWelcomeMessage?.Invoke(message);
         }
 
         internal void Shutdown()
         {
             GameThreadActionQueue.Enqueue(() =>  IntegratedClient?.Dispose());
+        }
+
+        internal void Send(INetworkMessage message)
+        {
+            IntegratedClient.SendMessage(message);
         }
 
     }

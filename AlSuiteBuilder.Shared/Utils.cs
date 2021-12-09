@@ -19,7 +19,7 @@ namespace AlSuiteBuilder.Shared
         {
             try
             {
-                CoreManager.Current.Actions.AddChatText(cmd, 5);
+                CoreManager.Current.Actions.AddChatText($"[Al] {cmd}", 5);
             }
             catch { }
         }

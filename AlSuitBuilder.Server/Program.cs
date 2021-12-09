@@ -1,4 +1,5 @@
 ﻿using AlSuiteBuilder.Shared.Messages;
+using AlSuiteBuilder.Shared.Messages.Client;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,6 +17,10 @@ namespace AlSuitBuilder.Server
         public static UBServer IntegratedServer { get; private set; }
         private static ConcurrentQueue<Action> GameThreadActionQueue = new ConcurrentQueue<Action>();
         private static List<int> _clientSubs = new List<int>();
+
+
+        private static List<WorkItem> PendingWork = new List<WorkItem>();
+        
 
         static void Main(string[] args)
         {
@@ -55,10 +60,21 @@ namespace AlSuitBuilder.Server
                 if (IntegratedServer.Clients.ContainsKey(c))
                 {
                     var nc = IntegratedServer.Clients[c];
-                    //nc.RemoveMessageHandler<WelcomeMessage>(WelcomeMessageHandler);
+                    nc.RemoveMessageHandler<ReadyForWorkMessage>(ReadyForWorkMessageHandler);
                     _clientSubs.Remove(c);
                 }
             });
+        }
+
+
+        /// <summary>
+        /// Client is all setup and is requesting work to do. (deliver an item)
+        /// </summary>
+        private static void ReadyForWorkMessageHandler(UBNetworking.Lib.MessageHeader header, ReadyForWorkMessage message)
+        {
+            
+
+
         }
 
         private static void IntegratedServer_OnClientConnected(object sender, EventArgs e)
@@ -69,8 +85,9 @@ namespace AlSuitBuilder.Server
             newClients.ForEach(c =>
             {
                 var nc = IntegratedServer.Clients[c];
-               // nc.AddMessageHandler<WelcomeMessage>(WelcomeMessageHandler);
-                nc.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = c }, new WelcomeMessage() { ServerState = Shared.SuiteBuilderState.Waiting });
+                nc.AddMessageHandler<ReadyForWorkMessage>(ReadyForWorkMessageHandler);
+                nc.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = c }, 
+                    new WelcomeMessage() { ServerState = Shared.SuitBuilderState.Idle });
                 _clientSubs.Add(c);
             });
 
