@@ -61,7 +61,7 @@ namespace AlSuitBuilder.Shared
                 var assemblyDirectory = @"c:\temp\aclog\";
                 using (StreamWriter writer = new StreamWriter(System.IO.Path.Combine(assemblyDirectory, "exceptions.txt"), true))
                 {
-                    writer.WriteLine(message);
+                    writer.WriteLine(DateTime.Now.ToString() + " " + message);
                     writer.Close();
                 }
             }

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace AlSuitBuilder.Server
 {
@@ -59,14 +59,19 @@ namespace AlSuitBuilder.Server
                     if (client == null || string.IsNullOrEmpty(client.CharacterName))
                         continue;
 
-                    var clientWork = WorkItems.Where(o => o.Character == client.CharacterName && o.LastAttempt < DateTime.Now.AddMinutes(-1)).ToList();
+                    var clientWork = WorkItems.Where(o => o.Character == client.CharacterName && o.LastAttempt < DateTime.Now.AddSeconds(-30)).ToList();
                     if (!clientWork.Any())
                     {
                         if (client.OtherCharacters != null && client.OtherCharacters.Any())
                         {
-                            clientWork = WorkItems.Where(o => client.OtherCharacters.ToList().Contains(o.Character) && o.LastAttempt < DateTime.Now.AddMinutes(-1)).ToList();
+                            clientWork = WorkItems.Where(o => o.LastAttempt < DateTime.Now.AddSeconds(-30) && client.OtherCharacters.ToList().Contains(o.Character)).ToList();
                             if (clientWork.Any())
                             {
+
+                                // make sure we are not just waiting on acceptable requests to the current character before we go further.
+                                if (WorkItems.Any(o => o.Character == client.CharacterName))
+                                    continue;
+
                                 clientWork.ForEach(o=> o.LastAttempt = DateTime.Now);
 
                                 Console.WriteLine("Sending switch from " + client.CharacterName + " to " + clientWork.First().Character);

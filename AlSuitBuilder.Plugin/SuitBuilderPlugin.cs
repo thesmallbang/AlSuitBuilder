@@ -9,48 +9,69 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AlSuitBuilder.Plugin.Actions.Queue;
+using System.Runtime.InteropServices;
+using System.IO;
 
 namespace AlSuitBuilder.Plugin
 {
+
     public class SuitBuilderPlugin
     {
 
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern bool PostMessage(IntPtr hhwnd, uint msg, IntPtr wparam, UIntPtr lparam);
+
+        public const int WM_MOUSEMOVE = 0x0200;
+        public const int WM_LBUTTONDOWN = 0x0201;
+        public const int WM_LBUTTONUP = 0x0202;
 
         public static SuitBuilderPlugin Current { get { return _instance; } }
 
         internal SuitBuilderType PluginType { get; private set; } = SuitBuilderType.Unknown;
         internal SuitBuilderState PluginState { get; private set; } = SuitBuilderState.Unknown;
         internal NetServiceHost PluginHost { get; private set; } = null;
+        public string SwapCharacter { get; internal set; }
 
         private static SuitBuilderPlugin _instance;
+        private int _characterSlots;
+        private Character[] _characters;
         private CoreManager _core = null;
 
         private List<QueuedAction> _actionQueue = new List<QueuedAction>();
 
         private NetworkProxy _net = new NetworkProxy();
 
-        public void Startup(NetServiceHost host)
+        public void Startup(NetServiceHost host, int characterSlots, Character[] characters)
         {
             if (_instance != null)
             {
                 return;
             }
             _instance = this;
+            _characterSlots = characterSlots;
+            _characters = characters;
 
             PluginHost = host;
             PluginHost.Actions.AddChatText("Builders Startup", 1);
+            Utils.WriteLog("Startup - queue clear");
             _actionQueue.Clear();
 
             _core = CoreManager.Current;
             _core.CharacterFilter.LoginComplete += CharacterFilter_LoginComplete;
             _core.CharacterFilter.Logoff += CharacterFilter_Logoff;
-            _net.OnWelcomeMessage += Net_OnWelcomeMessage;
-            _net.OnGiveItemMessage += Net_OnGiveItemMessage;
             _core.CommandLineText += _core_CommandLineText;
 
 
             if (_core.CharacterFilter.LoginStatus == 3)
+            {
+                _net = new NetworkProxy();
+
+                _net.OnWelcomeMessage += Net_OnWelcomeMessage;
+                _net.OnGiveItemMessage += Net_OnGiveItemMessage;
+
                 _net.Startup();
+            }
 
 
         }
@@ -136,7 +157,7 @@ namespace AlSuitBuilder.Plugin
 
                 if (triggedID)
                 {
-                    AddAction(new WaitForIDAction(() => ProcessGiveItem(message,++retryNumber)));
+                    AddAction(new WaitForIDAction(() => ProcessGiveItem(message, retryNumber+1)));
                     return;
                 }
 
@@ -196,6 +217,7 @@ namespace AlSuitBuilder.Plugin
             if (next == null)
                 return null;
 
+            Console.WriteLine("Removing an action with id " + next.Id);
             _actionQueue.RemoveAll(o => o.Id == next.Id);
 
             return next;
@@ -236,7 +258,7 @@ namespace AlSuitBuilder.Plugin
                     var action = GetQueuedAction();
                     if (action != null)
                     {
-                        Utils.WriteToChat("Executing an action from queue");
+                        Utils.WriteLog("Executing an action from queue");
                         action.Execute();
                     }
 
@@ -252,6 +274,10 @@ namespace AlSuitBuilder.Plugin
         private void CharacterFilter_LoginComplete(object sender, EventArgs e)
         {
             PluginHost.Actions.AddChatText("[AlSuitBuilder] Initializing", 1);
+            _net = new NetworkProxy();
+            _net.OnWelcomeMessage += Net_OnWelcomeMessage;
+            _net.OnGiveItemMessage += Net_OnGiveItemMessage;
+
             _net.Startup();
 
         }
@@ -259,6 +285,74 @@ namespace AlSuitBuilder.Plugin
         private void CharacterFilter_Logoff(object sender, LogoffEventArgs e)
         {
             _net?.Shutdown();
+
+            if (!string.IsNullOrEmpty(SwapCharacter))
+            {
+                var swapto = SwapCharacter;
+                AddAction(new DelayedAction(10000, () => { Utils.WriteLog("Delay Action Called");  LoginCharacter(swapto); }));
+                SwapCharacter = String.Empty;
+
+
+            }
+        }
+
+
+        private const int XPixelOffset = 121;
+        private const int YTopOfBox = 209;
+        private const int YBottomOfBox = 532;
+
+        public bool LoginCharacter(string name)
+        {
+
+            Utils.WriteLog($"Running LoginCharacter({name}) against " + _characters.Length);
+            for (int i = 0; i < _characters.Length; i++)
+            {
+                Utils.WriteLog($"Checking {name} vs {_characters[i].Name}");
+                if (_characters[i].Name.StartsWith("+") && !name.StartsWith("+"))
+                {
+                    if (String.Compare(_characters[i].Name.TrimStart('+'), name, StringComparison.OrdinalIgnoreCase) == 0)
+                        return LoginByIndex(i);
+                }
+                else
+                {
+                    if (String.Compare(_characters[i].Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+                        return LoginByIndex(i);
+                }
+            }
+
+            Utils.WriteLog("No match");
+            return false;
+        }
+
+        private bool LoginByIndex(int index)
+        {
+
+
+            if (index >= _characters.Count())
+                return false;
+
+            float characterNameSize = (YBottomOfBox - YTopOfBox) / (float)_characterSlots;
+
+            int yOffset = (int)(YTopOfBox + (characterNameSize / 2) + (characterNameSize * index));
+
+            Utils.WriteLog("Sending first click");
+            // Select the character
+            SendMouseClick(XPixelOffset, yOffset);
+
+            // Click the Enter button
+            Utils.WriteLog("Sending second click");
+            SendMouseClick(0x015C, 0x0185);
+
+            return true;
+        }
+
+        private void SendMouseClick(int x, int y)
+        {
+            int loc = (y * 0x10000) + x;
+
+            PostMessage(CoreManager.Current.Decal.Hwnd, WM_MOUSEMOVE, (IntPtr)0x00000000, (UIntPtr)loc);
+            PostMessage(CoreManager.Current.Decal.Hwnd, WM_LBUTTONDOWN, (IntPtr)0x00000001, (UIntPtr)loc);
+            PostMessage(CoreManager.Current.Decal.Hwnd, WM_LBUTTONUP, (IntPtr)0x00000000, (UIntPtr)loc);
         }
 
         public void Shutdown()
@@ -272,9 +366,6 @@ namespace AlSuitBuilder.Plugin
             _net.OnWelcomeMessage -= Net_OnWelcomeMessage;
             _net.OnGiveItemMessage -= Net_OnGiveItemMessage;
             _core.CommandLineText -= _core_CommandLineText;
-
-
-            PluginHost?.Actions.AddChatText("Builders Shutdown", 1);
 
         }
 
@@ -303,6 +394,7 @@ namespace AlSuitBuilder.Plugin
             {
                 characters.Add(_core.CharacterFilter.Characters[i].Name);
             }
+
             _net.Send(new ReadyForWorkMessage()
             {
                 Account = _core.CharacterFilter.AccountName,
@@ -330,6 +422,7 @@ namespace AlSuitBuilder.Plugin
             {
                 if (String.Equals(wo.Name, name, StringComparison.OrdinalIgnoreCase))
                 {
+                    Utils.WriteToChat("Adding an initial item match by name");
                     matches.Add(wo.Id);
                 }
             }
@@ -347,15 +440,15 @@ namespace AlSuitBuilder.Plugin
             int? result = null;
             triggeredId = false;
 
+
+            Utils.WriteToChat("Need ID for " + matches.Where(m => !m.HasIdData).ToList().Count + " of " + matches.Count());
+           
+
             foreach (var item in matches.Where(m => !m.HasIdData).ToList())
             {
+                
                 triggeredId = true;
-                AddAction(new GenericWorkAction(() =>
-                {
-                    Utils.WriteToChat($"Requesting ItemID [{item.Id}, {item.Name}, {item.LastIdTime}]");
-                    CoreManager.Current.Actions.RequestId(item.Id);
-                }));
-
+                CoreManager.Current.Actions.RequestId(item.Id);
             }
 
             if (triggeredId)
@@ -389,7 +482,7 @@ namespace AlSuitBuilder.Plugin
                 }
                 else
                 {
-                    Utils.WriteToChat("Item matched but not requirements " + String.Join(",", missing) + " had " + String.Join(",", itemSpells));
+                    Utils.WriteToChat("Item matched but not requirements " + String.Join(",", missing.Select(o => o.ToString()).ToArray()) + " had " + String.Join(",", itemSpells.Select(o => o.ToString()).ToArray()));
                 }
 
 

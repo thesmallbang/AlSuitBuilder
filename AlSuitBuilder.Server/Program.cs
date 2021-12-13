@@ -11,7 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+
 using UBNetworking;
 using UBNetworking.Lib;
 
@@ -115,18 +115,25 @@ namespace AlSuitBuilder.Server
         private static void ReadyForWorkMessageHandler(UBNetworking.Lib.MessageHeader header, ReadyForWorkMessage message)
         {
 
-            var match = _clientSubs.FirstOrDefault(c => c.Key == header.SendingClientId);
-            if (match.Key == 0)
-                return;
 
-            _clientSubs[match.Key] = new ClientInfo()
+            Console.WriteLine("client is ready for work " + header.SendingClientId);
+
+            var existing = _clientSubs.Where(o => o.Value.AccountName == message.Account).ToList();
+            foreach (var cs in existing)
+            {
+                Console.WriteLine("Disconnecting a stale character");
+                _clientSubs.Remove(cs.Key);
+                
+            }
+
+            _clientSubs[header.SendingClientId] = new ClientInfo()
             {
                 AccountName = message.Account,
                 CharacterName = message.Character,
                 ServerName = message.Server,
                 OtherCharacters =
                 message.AllCharacters.Except(new List<string>() { message.Character }).ToList(),
-                ServerClient = IntegratedServer.Clients[match.Key]
+                ServerClient = IntegratedServer.Clients[header.SendingClientId]
             };
 
             if (BuildInfo != null)
@@ -157,12 +164,8 @@ namespace AlSuitBuilder.Server
                 nc.AddMessageHandler<WorkResultMessage>(WorkResultMessageHandler);
                 nc.AddMessageHandler<InitiateBuildMessage>(InitiateBuildMessageHandler);
                 nc.AddMessageHandler<TerminateBuildMessage>(TerminateBuildMessageHandler);
-
                 _clientSubs.Add(c, new ClientInfo() { ServerClient = nc });
-
                 _actionQueue.Enqueue(new WelcomeClientAction(c));
-
-
             });
 
 

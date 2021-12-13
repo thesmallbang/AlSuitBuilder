@@ -19,6 +19,9 @@ namespace AlSuitBuilder.PluginHotLoader
         private Type pluginType;
         private FileSystemWatcher pluginWatcher = null;
 
+        private int characterSlots = 0;
+        readonly List<Character> characters = new List<Character>();
+
         private bool pluginsReady = false;
         private MethodInfo tickMethod;
         private bool isLoaded;
@@ -80,6 +83,7 @@ namespace AlSuitBuilder.PluginHotLoader
                 // subscribe to built in decal events
                 Core.PluginInitComplete += Core_PluginInitComplete;
                 Core.PluginTermComplete += Core_PluginTermComplete;
+                ServerDispatch += SuitCollectorHotReload_ServerDispatch;
                 Core.RenderFrame += Core_RenderFrame;
 
                 // watch the PluginAssemblyName for file changes
@@ -125,12 +129,16 @@ namespace AlSuitBuilder.PluginHotLoader
         {
             try
             {
+                ServerDispatch -= SuitCollectorHotReload_ServerDispatch;
                 Core.PluginInitComplete -= Core_PluginInitComplete;
                 Core.PluginTermComplete -= Core_PluginTermComplete;
+                Core.RenderFrame -= Core_RenderFrame;
                 UnloadPluginAssembly();
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
+
+       
         #endregion
 
         private void Core_PluginInitComplete(object sender, EventArgs e)
@@ -143,12 +151,37 @@ namespace AlSuitBuilder.PluginHotLoader
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
+        internal void SuitCollectorHotReload_ServerDispatch(object sender, NetworkMessageEventArgs e)
+        {
+            if (e.Message.Type == 0xF658) // Character List
+            {
+                characterSlots = Convert.ToInt32(e.Message["slotCount"]);
+
+                characters.Clear();
+
+                MessageStruct charactersStruct = e.Message.Struct("characters");
+
+                for (int i = 0; i < charactersStruct.Count; i++)
+                {
+                    
+                    int character = Convert.ToInt32(charactersStruct.Struct(i)["character"]);
+                    string name = Convert.ToString(charactersStruct.Struct(i)["name"]);
+                    int deleteTimeout = Convert.ToInt32(charactersStruct.Struct(i)["deleteTimeout"]);
+                    Utils.WriteLog("adding char " + name + " index " + i);
+                    characters.Add(new Character(character, name, deleteTimeout));
+                }
+
+                characters.Sort((a, b) => String.Compare(a.Name, b.Name, StringComparison.Ordinal));
+            }
+        }
+
         private void Core_PluginTermComplete(object sender, EventArgs e)
         {
             try
             {
-                pluginsReady = false;
-                UnloadPluginAssembly();
+                //Utils.WriteLog("Unloading assembly");
+                //pluginsReady = false;
+                //UnloadPluginAssembly();
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
@@ -173,8 +206,10 @@ namespace AlSuitBuilder.PluginHotLoader
 
                 var startupMethod = pluginType.GetMethod("Startup");
                 startupMethod.Invoke(pluginInstance, new object[] {
-                    Host
-                });
+                    Host,
+                    characterSlots,
+                    characters.ToArray()
+                }) ;
 
                 tickMethod = pluginType.GetMethod("Tick");
 
@@ -212,4 +247,6 @@ namespace AlSuitBuilder.PluginHotLoader
         }
         #endregion
     }
+
+   
 }

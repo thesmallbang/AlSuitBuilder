@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace AlSuitBuilder.Server.Actions
 {
@@ -19,6 +19,7 @@ namespace AlSuitBuilder.Server.Actions
         public override void Execute()
         {
 
+            Console.WriteLine("sending welcome");
             var clientInfo = Program.GetClientInfo(_clientId);
 
             clientInfo.ServerClient.SendObject(new UBNetworking.Lib.MessageHeader() { TargetClientId = 0, Type = UBNetworking.Lib.MessageHeaderType.Serialized, SendingClientId = _clientId },
