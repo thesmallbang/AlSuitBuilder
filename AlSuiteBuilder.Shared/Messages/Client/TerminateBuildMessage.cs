@@ -8,12 +8,7 @@ using System.Threading.Tasks;
 namespace AlSuitBuilder.Shared.Messages.Client
 {
     [Serializable]
-    public class ReadyForWorkMessage : INetworkMessage
+    public class TerminateBuildMessage : INetworkMessage
     {
-        public string Account { get; set; }
-        public string Character { get; set; }
-        public string Server { get; set; }
-
-        public string[] AllCharacters { get; set; }
     }
 }

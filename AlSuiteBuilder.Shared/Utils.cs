@@ -5,7 +5,7 @@ using System.IO;
 
 using System.Text;
 
-namespace AlSuiteBuilder.Shared
+namespace AlSuitBuilder.Shared
 {
     public static class Utils
     {

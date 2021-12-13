@@ -7,8 +7,8 @@
     <ProjectGuid>{6671E20E-14B0-4659-A4D3-3942781F4CAA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AlSuiteBuilder.Shared</RootNamespace>
-    <AssemblyName>AlSuiteBuilder.Shared</AssemblyName>
+    <RootNamespace>AlSuitBuilder.Shared</RootNamespace>
+    <AssemblyName>AlSuitBuilder.Shared</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -63,8 +63,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DelayedAction.cs" />
+    <Compile Include="MaterialInfo.cs" />
+    <Compile Include="Messages\Client\TerminateBuildMessage.cs" />
+    <Compile Include="Messages\Client\InitiateBuildMessage.cs" />
+    <Compile Include="Messages\Client\RequestSuitMessage.cs" />
+    <Compile Include="Messages\Client\WorkResultMessage.cs" />
     <Compile Include="Messages\Client\ReadyForWorkMessage.cs" />
-    <Compile Include="Messages\WelcomeMessage.cs" />
+    <Compile Include="Messages\Server\SwitchCharacterMessage.cs" />
+    <Compile Include="Messages\Server\GiveItemMessage.cs" />
+    <Compile Include="Messages\INetworkMessage.cs" />
+    <Compile Include="Messages\Server\InitiateBuildResponseMessage.cs" />
+    <Compile Include="Messages\Server\WelcomeMessage.cs" />
+    <Compile Include="QueuedAction.cs" />
     <Compile Include="SerializationBinder.cs" />
     <Compile Include="SuitBuilderState.cs" />
     <Compile Include="SuitBuilderType.cs" />

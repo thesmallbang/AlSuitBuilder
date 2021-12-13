@@ -1,4 +1,4 @@
-﻿using AlSuiteBuilder.Shared;
+﻿using AlSuitBuilder.Shared;
 using Decal.Adapter;
 using System;
 using System.Collections.Generic;
@@ -23,10 +23,9 @@ namespace AlSuitBuilder.PluginHotLoader
         private MethodInfo tickMethod;
         private bool isLoaded;
 
-        // process queues on the plugin at this interval
-        private Timer tickTimer = new Timer(100);
         // limit how often hot reload is triggered since we are referencing build output it is firing multiple times too quickly.
         private Timer assemblyTimer = new Timer(3000);
+        private DateTime _lastTick;
 
 
         /// <summary>
@@ -69,11 +68,9 @@ namespace AlSuitBuilder.PluginHotLoader
         {
             try
             {
-                File.AppendAllText(@"C:\temp\aclog\loggy.log", "PluginLoader Startup" + DateTime.Now.ToString());
 
-                tickTimer.Elapsed += Timer_Elapsed;
-                tickTimer.Enabled = true;
-                tickTimer.Start();
+
+
 
                 assemblyTimer.Elapsed += AssemblyTimer_Elapsed;
                 assemblyTimer.Enabled = true;
@@ -83,6 +80,7 @@ namespace AlSuitBuilder.PluginHotLoader
                 // subscribe to built in decal events
                 Core.PluginInitComplete += Core_PluginInitComplete;
                 Core.PluginTermComplete += Core_PluginTermComplete;
+                Core.RenderFrame += Core_RenderFrame;
 
                 // watch the PluginAssemblyName for file changes
                 pluginWatcher = new FileSystemWatcher();
@@ -94,6 +92,15 @@ namespace AlSuitBuilder.PluginHotLoader
 
             }
             catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        private void Core_RenderFrame(object sender, EventArgs e)
+        {
+            if (_lastTick < DateTime.Now.AddMilliseconds(-100))
+            {
+                 _lastTick = DateTime.Now;
+                tickMethod?.Invoke(pluginInstance, null);
+            }
         }
 
         private void AssemblyTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -108,7 +115,7 @@ namespace AlSuitBuilder.PluginHotLoader
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            tickMethod?.Invoke(pluginInstance, null);
+
         }
 
         /// <summary>
@@ -170,7 +177,7 @@ namespace AlSuitBuilder.PluginHotLoader
                 });
 
                 tickMethod = pluginType.GetMethod("Tick");
-                
+
 
                 isLoaded = true;
             }

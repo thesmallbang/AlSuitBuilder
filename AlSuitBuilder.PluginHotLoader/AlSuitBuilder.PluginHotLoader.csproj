@@ -69,9 +69,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AlSuiteBuilder.Shared\AlSuiteBuilder.Shared.csproj">
+    <ProjectReference Include="..\AlSuiteBuilder.Shared\AlSuitBuilder.Shared.csproj">
       <Project>{6671e20e-14b0-4659-a4d3-3942781f4caa}</Project>
-      <Name>AlSuiteBuilder.Shared</Name>
+      <Name>AlSuitBuilder.Shared</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

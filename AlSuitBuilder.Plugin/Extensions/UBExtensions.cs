@@ -1,5 +1,6 @@
-﻿using AlSuiteBuilder.Shared;
-using AlSuiteBuilder.Shared.Messages;
+﻿using AlSuitBuilder.Shared;
+using AlSuitBuilder.Shared.Messages;
+using AlSuitBuilder.Shared.Messages.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
-namespace AlSuiteBuilder.Shared
+namespace AlSuitBuilder.Shared
 {
     public class AlSerializationBinder : SerializationBinder
     {
@@ -30,7 +30,7 @@ namespace AlSuiteBuilder.Shared
 
         private Type GetFlatTypeMapping(string typeName)
         {
-            Type type = typeof(AlSuiteBuilder.Shared.Utils).Assembly.GetType(typeName);
+            Type type = typeof(AlSuitBuilder.Shared.Utils).Assembly.GetType(typeName);
             type = (((object)type == null) ? GetType().Assembly.GetType(typeName) : type);
             return ((object)type == null) ? Type.GetType(typeName) : type;
         }

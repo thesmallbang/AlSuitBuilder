@@ -1,4 +1,5 @@
-﻿using UBNetworking.Lib;
+﻿using System.Collections.Generic;
+using UBNetworking.Lib;
 
 namespace AlSuitBuilder.Server
 {
@@ -7,6 +8,7 @@ namespace AlSuitBuilder.Server
         public string CharacterName;
         public string AccountName;
         public string ServerName;
+        public List<string> OtherCharacters;
         public ServerClient ServerClient;
 
     }

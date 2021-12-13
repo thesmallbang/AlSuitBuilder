@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuitBuilder.Plugin", "AlS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuitBuilder.PluginHotLoader", "AlSuitBuilder.PluginHotLoader\AlSuitBuilder.PluginHotLoader.csproj", "{18C02350-64CB-48F6-B48B-530E1823585B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuiteBuilder.Shared", "AlSuiteBuilder.Shared\AlSuiteBuilder.Shared.csproj", "{6671E20E-14B0-4659-A4D3-3942781F4CAA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuitBuilder.Shared", "AlSuiteBuilder.Shared\AlSuitBuilder.Shared.csproj", "{6671E20E-14B0-4659-A4D3-3942781F4CAA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlSuitBuilder.Server", "AlSuitBuilder.Server\AlSuitBuilder.Server.csproj", "{0A0970D9-87EB-4AA3-8B20-D67F03041DBC}"
 EndProject

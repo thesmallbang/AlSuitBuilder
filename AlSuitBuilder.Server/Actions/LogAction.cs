@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AlSuitBuilder.Server.Actions
 {
-    internal class LogAction : IServerAction
+    internal class LogAction : UnclearableAction
     {
         private string _message;
 
@@ -21,6 +21,6 @@ namespace AlSuitBuilder.Server.Actions
             };
         }
 
-        public Action GetAction() => () => Console.WriteLine(_message);
+        public override void Execute() => Console.WriteLine(_message);
     }
 }
