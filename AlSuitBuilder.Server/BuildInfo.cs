@@ -118,12 +118,29 @@ namespace AlSuitBuilder.Server
                         clientWork.ForEach(o => o.LastAttempt = DateTime.Now);
 
                         Console.WriteLine("Sending work to client for " + workItem.Id + " - " + itemName);
+
+                        var requiredSpellIds = new List<int>();
+                        var missingCantrips = new List<string>();
+                        foreach (var spellTxt in workItem.Requirements)
+                        {
+                            var rid = Program.SpellData.SpellIdByName(spellTxt);
+                            if (rid == -1)
+                                missingCantrips.Add(spellTxt);
+                            else
+                                requiredSpellIds.Add(rid);
+                        }
+                        if (requiredSpellIds.Count < workItem.Requirements.Length)
+                        {
+                            Console.WriteLine($"Failed to find the SpellIds for cantrips: {string.Join(", ", missingCantrips)}");
+                            continue;
+                        }
+                        
                         Program.SendMessageToClient(clientId, new GiveItemMessage()
                         {
                             WorkId = workItem.Id,
                             ItemName = itemName,
                             MaterialId = materialId,
-                            RequiredSpells = workItem.Requirements.Select(r => Program.SpellData.SpellIdByName(r)).Where(rid => rid != -1).ToArray(),
+                            RequiredSpells = requiredSpellIds.ToArray(),
                             DeliverTo = Program.BuildInfo.DropCharacter
                         });
                     }

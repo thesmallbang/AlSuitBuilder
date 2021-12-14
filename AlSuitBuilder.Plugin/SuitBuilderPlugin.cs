@@ -130,7 +130,7 @@ namespace AlSuitBuilder.Plugin
 
         public void ProcessGiveItem(GiveItemMessage message, int retryNumber = 0)
         {
-            Utils.WriteToChat("Working request to deliver " + message.ItemName);
+            Utils.WriteToChat($"Working request to deliver {message.ItemName} (material {message.MaterialId}) with cantrips: {string.Join(", ", message.RequiredSpells.ToList().Select(id => id.ToString()).ToArray())}");
             Nullable<int> objectId = null;
 
             if (retryNumber > 5)
@@ -464,28 +464,25 @@ namespace AlSuitBuilder.Plugin
                     continue;
 
 
-                var itemSpells = new List<int>();
-
-
-
-
+                var itemSpells = new HashSet<int>();
                 for (int i = 0; i < item.SpellCount; i++)
                 {
                     itemSpells.Add(item.Spell(i));
                 }
-                var missing = requiredSpells.Except(itemSpells);
-
-                if (!missing.Any())
+                var missingSpells = false;
+                for (int i = 0; i < requiredSpells.Count; i++)
+                {
+                    if (!itemSpells.Contains(requiredSpells[i]))
+                    {
+                        missingSpells = true;
+                        break;
+                    }
+                }
+                if (!missingSpells)
                 {
                     result = item.Id;
                     break;
                 }
-                else
-                {
-                    Utils.WriteToChat("Item matched but not requirements " + String.Join(",", missing.Select(o => o.ToString()).ToArray()) + " had " + String.Join(",", itemSpells.Select(o => o.ToString()).ToArray()));
-                }
-
-
             }
 
             return result;
