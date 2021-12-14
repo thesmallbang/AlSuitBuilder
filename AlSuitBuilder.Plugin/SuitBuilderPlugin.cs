@@ -467,12 +467,11 @@ namespace AlSuitBuilder.Plugin
                 var itemSpells = new List<int>();
 
 
-
-
                 for (int i = 0; i < item.SpellCount; i++)
                 {
                     itemSpells.Add(item.Spell(i));
                 }
+
                 var missing = requiredSpells.Except(itemSpells);
 
                 if (!missing.Any())

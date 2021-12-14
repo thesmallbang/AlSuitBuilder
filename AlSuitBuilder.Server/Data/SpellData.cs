@@ -46,7 +46,9 @@ namespace AlSuitBuilder.Server.Data
         {
             var spell = Spells.FirstOrDefault(o => o.Name == name);
 
-            return  spell != null ? spell.Id : -1;
+            var resultId =   spell != null ? spell.Id : -1;
+            Console.WriteLine("SpellbyId:" + name + " result: " + resultId);
+            return resultId;
         }
 
     }
