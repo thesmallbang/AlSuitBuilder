@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AlSuitBuilder.Shared;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,8 +46,11 @@ namespace AlSuitBuilder.Server.Data
         public int SpellIdByName(string name)
         {
             var spell = Spells.FirstOrDefault(o => o.Name == name);
-
-            return  spell != null ? spell.Id : -1;
+            if (spell != null)
+                return spell.Id;
+            
+            Utils.WriteToChat($"Unable to find any SpellId for Cantrip with name: {name}");
+            return -1;
         }
 
     }
