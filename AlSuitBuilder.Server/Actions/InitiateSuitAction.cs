@@ -68,9 +68,27 @@ namespace AlSuitBuilder.Server.Actions
                         {
                             var startToTrim = requirementsText.IndexOf("(");
 
-                            requirementsText = requirementsText.Substring(0, startToTrim);
+                            requirementsText = requirementsText.Substring(0,  startToTrim);
+                            workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => Program.SpellData.SpellIdByName(x.Trim())).Where(p=>p != -1).ToArray();
+                                                        
+                            foreach (var info in Shared.Dictionaries.MaterialInfo)
+                            {
+                                if (workItem.ItemName.StartsWith(info.Value))
+                                {
+                                    workItem.MaterialId = info.Key;
+                                    workItem.ItemName = workItem.ItemName.Substring(info.Value.Length + 1);
+                                    break;
+                                }
+                            }
 
-                            workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToArray();
+                            foreach (var info in Shared.Dictionaries.SetInfo)
+                            {
+                                if (requirementsText.Contains(info.Value))
+                                {
+                                    workItem.SetId = info.Key;
+                                    break;
+                                }
+                            }
 
                         }
 

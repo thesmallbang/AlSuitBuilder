@@ -89,41 +89,24 @@ namespace AlSuitBuilder.Server
                             }
                             continue;
                         }
-                        else
-                        {
-                            Console.WriteLine("No othercharacters for " + client.CharacterName);
-                            continue;
-                        }
                     }
 
                     var workItem = clientWork.FirstOrDefault();
                     if (workItem != null)
                     {
 
-                        var itemName = workItem.ItemName;
-                        var materialId = 0;
-
-                        foreach (var info in Shared.Dictionaries.MaterialInfo)
-                        {
-                            if (itemName.StartsWith(info.Value))
-                            {
-                                materialId = info.Key;
-                                itemName = itemName.Substring(info.Value.Length + 1);
-                                break;
-                            }
-                        }
-
 
                         // set related work items to not attempt yet.
                         clientWork.ForEach(o => o.LastAttempt = DateTime.Now);
 
-                        Console.WriteLine("Sending work to client for " + workItem.Id + " - " + itemName);
+                        Console.WriteLine($"Sending work to client for {workItem.Id} - {workItem.ItemName} Set[{workItem.SetId}]");
                         Program.SendMessageToClient(clientId, new GiveItemMessage()
                         {
                             WorkId = workItem.Id,
-                            ItemName = itemName,
-                            MaterialId = materialId,
-                            RequiredSpells = workItem.Requirements.Select(r => Program.SpellData.SpellIdByName(r)).Where(rid => rid != -1).ToArray(),
+                            ItemName = workItem.ItemName,
+                            MaterialId = workItem.MaterialId,
+                            SetId = workItem.SetId,
+                            RequiredSpells = workItem.Requirements,
                             DeliverTo = Program.BuildInfo.DropCharacter
                         });
                     }

@@ -46,11 +46,10 @@ namespace AlSuitBuilder.Server.Data
         public int SpellIdByName(string name)
         {
             var spell = Spells.FirstOrDefault(o => o.Name == name);
-            if (spell != null)
-                return spell.Id;
-            
-            Utils.WriteToChat($"Unable to find any SpellId for Cantrip with name: {name}");
-            return -1;
+            var resultId =   spell != null ? spell.Id : -1;
+            Console.WriteLine("SpellbyId:" + name + " result: " + resultId);
+            return resultId;
+
         }
 
     }
