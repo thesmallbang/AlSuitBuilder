@@ -7,7 +7,9 @@ namespace AlSuitBuilder.Server.Data
         internal int Id;
         internal string Character;
         internal string ItemName;
-        internal string[] Requirements;
+        internal int[] Requirements;
+        internal int MaterialId;
+        internal int SetId;
         internal DateTime LastAttempt = DateTime.MinValue;
     }
 

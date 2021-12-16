@@ -235,9 +235,8 @@ namespace AlSuitBuilder.Server
             var work = BuildInfo.WorkItems.FirstOrDefault(o=>o.Id == message.WorkId);
             if (work == null) return;
 
+            Console.WriteLine("Removing " + work.Id);
             BuildInfo.WorkItems.RemoveAll(o => o.Id == work.Id);
-
-
             BuildInfo.WorkItems.Where(o => o.Character == work.Character).ToList().ForEach(o => o.LastAttempt = DateTime.MinValue);
 
 

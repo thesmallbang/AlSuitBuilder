@@ -162,6 +162,12 @@ namespace AlSuitBuilder.Plugin
                 }
 
 
+                if (objectId == null)
+                {
+                    Utils.WriteToChat("Matching item was not found on character");
+                    AddAction(new GenericWorkAction(() => SendGiveComplete(false, message)));
+                    return;
+                }
 
                 var destination = FindTargetPlayer(message.DeliverTo);
                 if (destination == null)
@@ -169,10 +175,7 @@ namespace AlSuitBuilder.Plugin
                     Utils.WriteToChat($"Destination player[{message.DeliverTo}] not found");
                     return;
                 }
-
-                if (objectId != null)
-                {
-
+                                
 
                     Utils.WriteToChat("Attempting give");
                     CoreManager.Current.Actions.GiveItem(objectIds[0], destination.Value);
@@ -192,7 +195,7 @@ namespace AlSuitBuilder.Plugin
 
                     }));
 
-                }
+                
 
             }
             catch (Exception ex)
@@ -460,10 +463,6 @@ namespace AlSuitBuilder.Plugin
                 if (materialId > 0 && item.Values(LongValueKey.Material) != materialId)
                     continue;
 
-                if (armorSetId > 0 && item.Values(LongValueKey.ArmorSet) != armorSetId)
-                    continue;
-
-
                 var itemSpells = new List<int>();
 
 
@@ -474,15 +473,22 @@ namespace AlSuitBuilder.Plugin
 
                 var missing = requiredSpells.Except(itemSpells);
 
-                if (!missing.Any())
-                {
-                    result = item.Id;
-                    break;
-                }
-                else
+                if (missing.Any())
                 {
                     Utils.WriteToChat("Item matched but not requirements " + String.Join(",", missing.Select(o => o.ToString()).ToArray()) + " had " + String.Join(",", itemSpells.Select(o => o.ToString()).ToArray()));
+                    continue;
                 }
+
+                var foundSet = item.Values(LongValueKey.ArmorSet);
+
+                if (armorSetId > 0 && foundSet != armorSetId)
+                {
+                    Utils.WriteToChat("Potential item found but wrong armor set");
+                    continue;
+                }
+
+                result = item.Id;
+                break;
 
 
             }
