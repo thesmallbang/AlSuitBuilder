@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AlSuitBuilder.Shared;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,10 +46,10 @@ namespace AlSuitBuilder.Server.Data
         public int SpellIdByName(string name)
         {
             var spell = Spells.FirstOrDefault(o => o.Name == name);
-
             var resultId =   spell != null ? spell.Id : -1;
             Console.WriteLine("SpellbyId:" + name + " result: " + resultId);
             return resultId;
+
         }
 
     }

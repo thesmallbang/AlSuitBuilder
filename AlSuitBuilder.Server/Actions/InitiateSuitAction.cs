@@ -67,7 +67,7 @@ namespace AlSuitBuilder.Server.Actions
                         if (requirementsText.EndsWith(")"))
                         {
                             var startToTrim = requirementsText.IndexOf("(");
-                            
+
                             requirementsText = requirementsText.Substring(0,  startToTrim);
                             workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => Program.SpellData.SpellIdByName(x.Trim())).Where(p=>p != -1).ToArray();
                                                         
@@ -89,9 +89,6 @@ namespace AlSuitBuilder.Server.Actions
                                     break;
                                 }
                             }
-
-
-
 
                         }
 
