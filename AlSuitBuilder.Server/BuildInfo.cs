@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using AlSuitBuilder.Shared;
 
 namespace AlSuitBuilder.Server
 {
@@ -74,8 +74,9 @@ namespace AlSuitBuilder.Server
 
                                 clientWork.ForEach(o=> o.LastAttempt = DateTime.Now);
 
-                                Console.WriteLine("Sending switch from " + client.CharacterName + " to " + clientWork.First().Character);
-                                Program.SendMessageToClient(clientId, new SwitchCharacterMessage() { Character = clientWork.First().Character });
+                                var firstWork = clientWork.First();
+                                Utils.WriteWorkItemToLog($"Sending switch from {client.CharacterName} to {firstWork.Character}", firstWork, true);
+                                Program.SendMessageToClient(clientId, new SwitchCharacterMessage() { Character = firstWork.Character });
                                 // queue up character change
                                 continue;
                             }

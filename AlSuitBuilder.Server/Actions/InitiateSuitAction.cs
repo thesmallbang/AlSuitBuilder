@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using AlSuitBuilder.Shared;
 
 namespace AlSuitBuilder.Server.Actions
 {
@@ -114,8 +114,15 @@ namespace AlSuitBuilder.Server.Actions
                             characters.Add(client.CharacterName);
                             characters.AddRange(client.OtherCharacters);
                         }
-                        
-                        workItems.RemoveAll(o=>o.Character == clientInfo.CharacterName);
+
+                        var itemsOnBuilderChar = workItems.Select(o => o.Character == clientInfo.CharacterName ? o : null).Where(o => o != null);
+                        if (itemsOnBuilderChar.Count() > 0)
+                        {
+                            foreach (var itemOnChar in itemsOnBuilderChar)
+                                Utils.WriteWorkItemToLog($"Excluding due to being on current character ({clientInfo.CharacterName})", itemOnChar, true);
+                        }
+
+                        workItems.RemoveAll(o => o.Character == clientInfo.CharacterName);
                         var missing = workItems.Select(o => o.Character).Except(characters);
                         
                         if (missing.Any())
@@ -127,6 +134,8 @@ namespace AlSuitBuilder.Server.Actions
 
                             success = true;
                             responseMessage = $"Starting Build [{_suitName}] Will attempt processing {workItems.Count} items.";
+                            foreach (var workItem in workItems)
+                                Utils.WriteWorkItemToLog($"Parsed successfully from suit", workItem, true);
 
                             Program.BuildInfo = new BuildInfo()
                             {
