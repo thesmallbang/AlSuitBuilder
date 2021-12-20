@@ -104,6 +104,9 @@ namespace AlSuitBuilder.Server.Actions
                     else
                     {
 
+                        foreach (var workItem in workItems)
+                            Utils.WriteWorkItemToLog($"Parsed successfully from suit", workItem, true);
+
                         var characters = new List<string>();
                         foreach (var clientId in Program.GetClientIds())
                         {
@@ -134,8 +137,7 @@ namespace AlSuitBuilder.Server.Actions
 
                             success = true;
                             responseMessage = $"Starting Build [{_suitName}] Will attempt processing {workItems.Count} items.";
-                            foreach (var workItem in workItems)
-                                Utils.WriteWorkItemToLog($"Parsed successfully from suit", workItem, true);
+                         
 
                             Program.BuildInfo = new BuildInfo()
                             {

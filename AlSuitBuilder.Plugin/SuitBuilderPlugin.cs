@@ -176,14 +176,13 @@ namespace AlSuitBuilder.Plugin
                     return;
                 }
                                 
-
                     Utils.WriteToChat("Attempting give");
-                    CoreManager.Current.Actions.GiveItem(objectIds[0], destination.Value);
+                    CoreManager.Current.Actions.GiveItem(objectId.Value, destination.Value);
 
-                    AddAction(new DelayedAction(2000, () =>
+                    AddAction(new DelayedAction(5000, () =>
                     {
 
-                        if (CoreManager.Current.WorldFilter.GetInventory().Any(o => o.Id == objectId))
+                        if (CoreManager.Current.WorldFilter.GetInventory().Any(o => o.Id == objectId.Value))
                         {
                             AddAction(new GenericWorkAction(() => ProcessGiveItem(message, ++retryNumber)));
                         }
@@ -425,7 +424,6 @@ namespace AlSuitBuilder.Plugin
             {
                 if (String.Equals(wo.Name, name, StringComparison.OrdinalIgnoreCase))
                 {
-                    Utils.WriteToChat("Adding an initial item match by name");
                     matches.Add(wo.Id);
                 }
             }
@@ -436,6 +434,11 @@ namespace AlSuitBuilder.Plugin
         internal int? ItemsWithRequirements(List<int> objectIds, List<int> requiredSpells, int materialId, int armorSetId, out bool triggeredId)
         {
 
+            var ids = String.Join(",", objectIds.Select(o=>o.ToString()).ToArray());
+            var reqIds = String.Join(",", requiredSpells.Select(o=>o.ToString()).ToArray());
+
+            Utils.WriteToChat($"ItemRequirements: [IDs: { ids } ] [required: {reqIds}] [mat: {materialId}] [set: {armorSetId}]");
+
             if (requiredSpells == null)
                 requiredSpells = new List<int>();
 
@@ -444,8 +447,6 @@ namespace AlSuitBuilder.Plugin
             triggeredId = false;
 
 
-            Utils.WriteToChat("Need ID for " + matches.Where(m => !m.HasIdData).ToList().Count + " of " + matches.Count());
-           
 
             foreach (var item in matches.Where(m => !m.HasIdData).ToList())
             {

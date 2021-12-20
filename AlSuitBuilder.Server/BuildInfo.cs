@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using AlSuitBuilder.Shared;
 
 namespace AlSuitBuilder.Server
 {
@@ -100,7 +99,7 @@ namespace AlSuitBuilder.Server
                         // set related work items to not attempt yet.
                         clientWork.ForEach(o => o.LastAttempt = DateTime.Now);
 
-                        Console.WriteLine($"Sending work to client for {workItem.Id} - {workItem.ItemName} Set[{workItem.SetId}]");
+                        Utils.WriteWorkItemToLog("Sending work to client", workItem, true);
                         Program.SendMessageToClient(clientId, new GiveItemMessage()
                         {
                             WorkId = workItem.Id,
