@@ -102,7 +102,7 @@ namespace AlSuitBuilder.PluginHotLoader
         {
             if (_lastTick < DateTime.Now.AddMilliseconds(-100))
             {
-                 _lastTick = DateTime.Now;
+                _lastTick = DateTime.Now;
                 tickMethod?.Invoke(pluginInstance, null);
             }
         }
@@ -130,6 +130,7 @@ namespace AlSuitBuilder.PluginHotLoader
             try
             {
                 ServerDispatch -= SuitCollectorHotReload_ServerDispatch;
+                
                 Core.PluginInitComplete -= Core_PluginInitComplete;
                 Core.PluginTermComplete -= Core_PluginTermComplete;
                 Core.RenderFrame -= Core_RenderFrame;
@@ -138,7 +139,7 @@ namespace AlSuitBuilder.PluginHotLoader
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-       
+
         #endregion
 
         private void Core_PluginInitComplete(object sender, EventArgs e)
@@ -163,7 +164,7 @@ namespace AlSuitBuilder.PluginHotLoader
 
                 for (int i = 0; i < charactersStruct.Count; i++)
                 {
-                    
+
                     int character = Convert.ToInt32(charactersStruct.Struct(i)["character"]);
                     string name = Convert.ToString(charactersStruct.Struct(i)["name"]);
                     int deleteTimeout = Convert.ToInt32(charactersStruct.Struct(i)["deleteTimeout"]);
@@ -173,15 +174,16 @@ namespace AlSuitBuilder.PluginHotLoader
 
                 characters.Sort((a, b) => String.Compare(a.Name, b.Name, StringComparison.Ordinal));
             }
+  
         }
+
+  
 
         private void Core_PluginTermComplete(object sender, EventArgs e)
         {
             try
             {
-                //Utils.WriteLog("Unloading assembly");
-                //pluginsReady = false;
-                //UnloadPluginAssembly();
+
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
@@ -209,7 +211,7 @@ namespace AlSuitBuilder.PluginHotLoader
                     Host,
                     characterSlots,
                     characters.ToArray()
-                }) ;
+                });
 
                 tickMethod = pluginType.GetMethod("Tick");
 
@@ -248,5 +250,5 @@ namespace AlSuitBuilder.PluginHotLoader
         #endregion
     }
 
-   
+
 }

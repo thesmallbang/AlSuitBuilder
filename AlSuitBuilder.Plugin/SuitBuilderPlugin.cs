@@ -249,6 +249,7 @@ namespace AlSuitBuilder.Plugin
             _actionQueue.Add(action);
         }
 
+
         public void Tick()
         {
             _net.Tick();
@@ -291,7 +292,7 @@ namespace AlSuitBuilder.Plugin
             if (!string.IsNullOrEmpty(SwapCharacter))
             {
                 var swapto = SwapCharacter;
-                AddAction(new DelayedAction(10000, () => { Utils.WriteLog("Delay Action Called");  LoginCharacter(swapto); }));
+                AddAction(new DelayedAction(20000, () => { Utils.WriteLog("Delay Action Called");  LoginCharacter(swapto); }));
                 SwapCharacter = String.Empty;
 
 
