@@ -135,7 +135,7 @@ namespace AlSuitBuilder.Plugin
 
             if (retryNumber > 5)
             {
-                Utils.WriteToChat("Timed out give");
+                Utils.Decal_DispatchOnChatCommand($"/w {message.DeliverTo}, Item Failed. {message.ItemName} maximum retries attempted.");
                 AddAction(new GenericWorkAction(() => SendGiveComplete(false, message)));
                 return;
             }
@@ -148,7 +148,7 @@ namespace AlSuitBuilder.Plugin
                 if (!objectIds.Any())
                 {
                     AddAction(new GenericWorkAction(() => SendGiveComplete(false, message)));
-                    Utils.WriteToChat($"No item matches for {message.ItemName}");
+                    Utils.Decal_DispatchOnChatCommand($"/w {message.DeliverTo}, Item Failed. {message.ItemName} is not on me.");
                     return;
                 }
 
@@ -164,7 +164,7 @@ namespace AlSuitBuilder.Plugin
 
                 if (objectId == null)
                 {
-                    Utils.WriteToChat("Matching item was not found on character");
+                    Utils.Decal_DispatchOnChatCommand($"/w {message.DeliverTo}, Item Failed. {message.ItemName} is not on me with matching requirements.");
                     AddAction(new GenericWorkAction(() => SendGiveComplete(false, message)));
                     return;
                 }

@@ -56,7 +56,7 @@ namespace AlSuitBuilder.Server.Actions
                         if (parts.Length != 3)
                             continue;
 
-                        var requirementsText = parts[2];
+                        var requirementsText = parts[2].Trim();
                         var requirements = new List<string>();
                         var workItem = new WorkItem()
                         {
