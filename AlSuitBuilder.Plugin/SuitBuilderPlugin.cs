@@ -170,9 +170,14 @@ namespace AlSuitBuilder.Plugin
                 }
 
                 var destination = FindTargetPlayer(message.DeliverTo);
-                if (destination == null)
+                if (destination == null || destination == -1)
                 {
-                    Utils.WriteToChat($"Destination player[{message.DeliverTo}] not found");
+                    if (retryNumber >= 4) return;
+
+                    Utils.WriteToChat($"Destination player[{message.DeliverTo}] not found. Attempting /hom and retry in 20 seconds.");
+                    AddAction(new GenericWorkAction(() => Utils.DispatchChatToBoxWithPluginIntercept($"/w {message.DeliverTo}, I am not nearby to deliver {message.ItemName}[{objectId}]. I will recall and try again soon.")));
+                    AddAction(new GenericWorkAction(() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+                    AddAction(new DelayedAction(20000, () => ProcessGiveItem(message, 4)));
                     return;
                 }
                                 
@@ -507,6 +512,8 @@ namespace AlSuitBuilder.Plugin
 
             return woc.FirstOrDefault() != null ? woc.First().Id : -1;
         }
+
+      
 
     }
 }

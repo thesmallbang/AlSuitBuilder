@@ -3,12 +3,39 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AlSuitBuilder.Shared
 {
     public static class Utils
     {
+
+        [DllImport("Decal.dll")]
+        static extern int DispatchOnChatCommand(ref IntPtr str, [MarshalAs(UnmanagedType.U4)] int target);
+
+        public static void DispatchChatToBoxWithPluginIntercept(string cmd)
+        {
+            if (!Decal_DispatchOnChatCommand(cmd))
+                CoreManager.Current.Actions.InvokeChatParser(cmd);
+        }
+
+        public static bool Decal_DispatchOnChatCommand(string cmd)
+        {
+            IntPtr bstr = Marshal.StringToBSTR(cmd);
+
+            try
+            {
+                bool eaten = (DispatchOnChatCommand(ref bstr, 1) & 0x1) > 0;
+
+                return eaten;
+            }
+            finally
+            {
+                Marshal.FreeBSTR(bstr);
+            }
+        }
+
         #region Decal Helpers
         /// <summary>
         /// Attempts to write a message to the ingame chat window.  If there is no character logged in
