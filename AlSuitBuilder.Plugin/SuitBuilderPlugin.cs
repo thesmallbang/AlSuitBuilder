@@ -176,7 +176,11 @@ namespace AlSuitBuilder.Plugin
 
                     Utils.WriteToChat($"Destination player[{message.DeliverTo}] not found. Attempting /hom and retry in 20 seconds.");
                     AddAction(new GenericWorkAction(() => Utils.DispatchChatToBoxWithPluginIntercept($"/w {message.DeliverTo}, I am not nearby to deliver {message.ItemName}[{objectId}]. I will recall and try again soon.")));
-                    AddAction(new GenericWorkAction(() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+                    AddAction(new DelayedAction(100,() => Utils.Decal_DispatchOnChatCommand("/hom")));
+                    AddAction(new DelayedAction(200,() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+                    AddAction(new DelayedAction(300,() => Utils.Decal_DispatchOnChatCommand("/hom")));
+                    AddAction(new DelayedAction(400,() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+
                     AddAction(new DelayedAction(20000, () => ProcessGiveItem(message, 4)));
                     return;
                 }
