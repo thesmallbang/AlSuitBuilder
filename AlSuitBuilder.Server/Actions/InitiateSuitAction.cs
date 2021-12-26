@@ -61,36 +61,39 @@ namespace AlSuitBuilder.Server.Actions
                         var workItem = new WorkItem()
                         {
                             Id = ++id,
-                            Character =  parts[0].Trim(),
+                            Character = parts[0].Trim(),
                             ItemName = parts[1].Trim(),
                         };
                         if (requirementsText.EndsWith(")"))
                         {
-                            var startToTrim = requirementsText.IndexOf("(");
 
-                            requirementsText = requirementsText.Substring(0,  startToTrim);
-                            workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => Program.SpellData.SpellIdByName(x.Trim())).Where(p=>p != -1).ToArray();
-                                                        
-                            foreach (var info in Shared.Dictionaries.MaterialInfo)
-                            {
-                                if (workItem.ItemName.StartsWith(info.Value))
-                                {
-                                    workItem.MaterialId = info.Key;
-                                    workItem.ItemName = workItem.ItemName.Substring(info.Value.Length + 1);
-                                    break;
-                                }
-                            }
+                            var startToTrim = requirementsText.LastIndexOf("(");
 
-                            foreach (var info in Shared.Dictionaries.SetInfo)
-                            {
-                                if (requirementsText.Contains(info.Value))
-                                {
-                                    workItem.SetId = info.Key;
-                                    break;
-                                }
-                            }
-
+                            requirementsText = requirementsText.Substring(0, startToTrim);
                         }
+
+                        workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => Program.SpellData.SpellIdByName(x.Trim())).Where(p => p != -1).ToArray();
+
+                        foreach (var info in Shared.Dictionaries.MaterialInfo)
+                        {
+                            if (workItem.ItemName.StartsWith(info.Value))
+                            {
+                                workItem.MaterialId = info.Key;
+                                workItem.ItemName = workItem.ItemName.Substring(info.Value.Length + 1);
+                                break;
+                            }
+                        }
+
+                        foreach (var info in Shared.Dictionaries.SetInfo)
+                        {
+                            if (requirementsText.Contains(info.Value))
+                            {
+                                workItem.SetId = info.Key;
+                                break;
+                            }
+                        }
+
+
 
                         workItems.Add(workItem);
 
@@ -127,7 +130,7 @@ namespace AlSuitBuilder.Server.Actions
 
                         workItems.RemoveAll(o => o.Character == clientInfo.CharacterName);
                         var missing = workItems.Select(o => o.Character).Except(characters);
-                        
+
                         if (missing.Any())
                         {
                             responseMessage = $"No client(s) running for {string.Join(",", missing)}";
@@ -137,7 +140,7 @@ namespace AlSuitBuilder.Server.Actions
 
                             success = true;
                             responseMessage = $"Starting Build [{_suitName}] Will attempt processing {workItems.Count} items.";
-                         
+
 
                             Program.BuildInfo = new BuildInfo()
                             {
