@@ -101,7 +101,8 @@ namespace AlSuitBuilder.Server
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                    Utils.LogException(ex);
                 }
 
                 System.Threading.Thread.Sleep(100);

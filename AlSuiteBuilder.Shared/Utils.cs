@@ -76,7 +76,7 @@ namespace AlSuitBuilder.Shared
         {
             try
             {
-                WriteLog(ex.ToString() + "\n");
+                WriteLog(ex.ToString() + "\n" + ex.StackTrace + "\n");
             }
             catch { }
         }
