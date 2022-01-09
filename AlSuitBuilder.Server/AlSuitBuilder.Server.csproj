@@ -77,6 +77,11 @@
     <Compile Include="ClientInfo.cs" />
     <Compile Include="Data\SpellData.cs" />
     <Compile Include="Data\SpellDataItem.cs" />
+    <Compile Include="Parsers\IBuildFileParser.cs" />
+    <Compile Include="Parsers\MagSuitParser.cs" />
+    <Compile Include="Parsers\RegexParser.cs" />
+    <Compile Include="Parsers\VGIGameParser.cs" />
+    <Compile Include="Parsers\VGISuitParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

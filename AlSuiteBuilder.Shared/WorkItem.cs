@@ -10,7 +10,10 @@ namespace AlSuitBuilder.Shared
         public int[] Requirements;
         public int MaterialId;
         public int SetId;
+        public int Burden;
         public DateTime LastAttempt = DateTime.MinValue;
+        public int Value;
+
     }
 
    

@@ -73,7 +73,7 @@ namespace AlSuitBuilder.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Utils.LogException(ex);
                 Console.ReadKey();
                 return;
             }
@@ -92,7 +92,7 @@ namespace AlSuitBuilder.Server
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Utils.LogException(ex);
                 }
 
                 try

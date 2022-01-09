@@ -11,6 +11,8 @@ using System.Linq;
 using AlSuitBuilder.Plugin.Actions.Queue;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Text;
+using System.Reflection;
 
 namespace AlSuitBuilder.Plugin
 {
@@ -36,11 +38,13 @@ namespace AlSuitBuilder.Plugin
         private static SuitBuilderPlugin _instance;
         private int _characterSlots;
         private Character[] _characters;
+        private string _directory;
         private CoreManager _core = null;
 
         private List<QueuedAction> _actionQueue = new List<QueuedAction>();
 
         private NetworkProxy _net = new NetworkProxy();
+        private bool _runningAllegiance = false;
 
         public void Startup(NetServiceHost host, int characterSlots, Character[] characters)
         {
@@ -52,6 +56,19 @@ namespace AlSuitBuilder.Plugin
             _characterSlots = characterSlots;
             _characters = characters;
 
+            string asm = string.Empty;
+
+            try
+            {
+                asm = Assembly.GetCallingAssembly().Location;
+
+            _directory = new FileInfo(asm).DirectoryName;
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteToChat("Unable to parse directory [asm]" + asm + " [ex]" + ex.Message);
+            }
+
             PluginHost = host;
             PluginHost.Actions.AddChatText("Builders Startup", 1);
             Utils.WriteLog("Startup - queue clear");
@@ -61,6 +78,7 @@ namespace AlSuitBuilder.Plugin
             _core.CharacterFilter.LoginComplete += CharacterFilter_LoginComplete;
             _core.CharacterFilter.Logoff += CharacterFilter_Logoff;
             _core.CommandLineText += _core_CommandLineText;
+            _core.ChatBoxMessage += _core_ChatBoxMessage;
 
 
             if (_core.CharacterFilter.LoginStatus == 3)
@@ -72,6 +90,70 @@ namespace AlSuitBuilder.Plugin
 
                 _net.Startup();
             }
+
+
+        }
+
+
+        private string _lastPatron = string.Empty;
+
+        private void _core_ChatBoxMessage(object sender, ChatTextInterceptEventArgs e)
+        {
+
+            if (!_runningAllegiance || _allegianceTree.Count == 0)
+                return;
+
+
+            var infoOn = "Allegiance information for ";
+
+
+            if (e.Text.StartsWith(infoOn))
+            {
+                var name = e.Text.Substring(infoOn.Length);
+                name = name.Substring(name.IndexOf(" ") + 1);
+                name = name.Substring(0, name.Length - 2);
+                
+                bool online = name.EndsWith("*");
+                name = name.Replace(" *", "");
+
+                var match = _allegianceTree.FirstOrDefault(o => o.Name == name);
+                if (match == null)
+                {
+                    Utils.WriteToChat("Invalid parsing...");
+                    return;
+                }
+                match.Scanned = true;
+                match.Online = online;
+                _lastPatron = match.Name;
+
+            }
+
+            if (e.Text.StartsWith("      "))
+            {
+                var name = e.Text.Trim();
+                if (!string.IsNullOrEmpty(name))
+                {
+                    var ranks = new List<string>() { "Void Lord", "High King", "High Queen", "Grand Duke", "Grand Duchess" };
+                    var rankSpaces = 0;
+
+                    if (ranks.Contains(name))
+                        rankSpaces = 1;
+
+
+                    name = name.Substring(name.IndexOf(' ') + 1);
+
+                    if (rankSpaces > 0)
+                        name = name.Substring(name.IndexOf(' ') + 1);
+
+
+                    bool online = name.EndsWith("*");
+                    name = name.Replace(" *", "");
+
+                    Utils.WriteToChat("Adding an allegiance member to track " + name);
+                    _allegianceTree.Add(new AllegianceTrackItem() { Name = name, Online = online, Scanned = false, Patron = _lastPatron });
+                }
+            }
+
 
 
         }
@@ -101,6 +183,27 @@ namespace AlSuitBuilder.Plugin
             var cmd = parts[1];
             switch (cmd)
             {
+                case "online":
+                    
+                    if (parts.Length < 4)
+                    {
+
+                        Utils.WriteToChat("Invalid format. /alb online filename.csv playerToStartWith");
+                        return;
+                    }
+                    _allegianceFile = parts[2].Trim();
+                    if (!_allegianceFile.ToLower().EndsWith(".csv"))
+                        _allegianceFile += ".csv";
+
+                    _allegianceFile = Path.Combine(_directory, _allegianceFile);
+
+                       
+                    _allegianceTree.Clear();
+                    _runningAllegiance = true;
+
+
+                    _allegianceTree.Add(new AllegianceTrackItem() { Name = String.Join(" ", parts.Skip(3).ToArray()) });
+                    break;
                 case "build":
                     if (parts.Length != 3)
                     {
@@ -119,8 +222,29 @@ namespace AlSuitBuilder.Plugin
                     Utils.WriteToChat("Unknown /alb command");
                     break;
             }
+        }
 
 
+        private List<AllegianceTrackItem> _allegianceTree = new List<AllegianceTrackItem>();
+        private string _allegianceFile;
+
+        private class AllegianceTrackItem
+        {
+            public string Name { get; set; }
+            public bool Online { get; set; }
+            public bool Scanned { get; set; }
+            public string Patron { get; set; }
+        }
+
+        private void RequestAllegianceInfo(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                name = "Alastrius";
+
+            Utils.WriteToChat($"[CMD] /allegiance info {name}");
+            Utils.DispatchChatToBoxWithPluginIntercept($"/allegiance info {name}");
+            // add in a fake delay to back up the request queue a bit
+            AddAction(new DelayedAction(2000, () => { CheckFinalizeAllegiance(0); }));
         }
 
         private void Net_OnGiveItemMessage(GiveItemMessage message)
@@ -157,7 +281,7 @@ namespace AlSuitBuilder.Plugin
 
                 if (triggedID)
                 {
-                    AddAction(new WaitForIDAction(() => ProcessGiveItem(message, retryNumber+1)));
+                    AddAction(new WaitForIDAction(() => ProcessGiveItem(message, retryNumber + 1)));
                     return;
                 }
 
@@ -176,34 +300,34 @@ namespace AlSuitBuilder.Plugin
 
                     Utils.WriteToChat($"Destination player[{message.DeliverTo}] not found. Attempting /hom and retry in 20 seconds.");
                     AddAction(new GenericWorkAction(() => Utils.DispatchChatToBoxWithPluginIntercept($"/w {message.DeliverTo}, I am not nearby to deliver {message.ItemName}[{objectId}]. I will recall and try again soon.")));
-                    AddAction(new DelayedAction(100,() => Utils.Decal_DispatchOnChatCommand("/hom")));
-                    AddAction(new DelayedAction(200,() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
-                    AddAction(new DelayedAction(300,() => Utils.Decal_DispatchOnChatCommand("/hom")));
-                    AddAction(new DelayedAction(400,() => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+                    AddAction(new DelayedAction(100, () => Utils.Decal_DispatchOnChatCommand("/hom")));
+                    AddAction(new DelayedAction(200, () => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
+                    AddAction(new DelayedAction(300, () => Utils.Decal_DispatchOnChatCommand("/hom")));
+                    AddAction(new DelayedAction(400, () => Utils.DispatchChatToBoxWithPluginIntercept("/hom")));
 
                     AddAction(new DelayedAction(20000, () => ProcessGiveItem(message, 4)));
                     return;
                 }
-                                
-                    Utils.WriteToChat("Attempting give");
-                    CoreManager.Current.Actions.GiveItem(objectId.Value, destination.Value);
 
-                    AddAction(new DelayedAction(5000, () =>
+                Utils.WriteToChat("Attempting give");
+                CoreManager.Current.Actions.GiveItem(objectId.Value, destination.Value);
+
+                AddAction(new DelayedAction(5000, () =>
+                {
+
+                    if (CoreManager.Current.WorldFilter.GetInventory().Any(o => o.Id == objectId.Value))
                     {
-
-                        if (CoreManager.Current.WorldFilter.GetInventory().Any(o => o.Id == objectId.Value))
-                        {
-                            AddAction(new GenericWorkAction(() => ProcessGiveItem(message, ++retryNumber)));
-                        }
-                        else
-                        {
-                            AddAction(new GenericWorkAction(() => SendGiveComplete(true, message)));
-                        }
+                        AddAction(new GenericWorkAction(() => ProcessGiveItem(message, ++retryNumber)));
+                    }
+                    else
+                    {
+                        AddAction(new GenericWorkAction(() => SendGiveComplete(true, message)));
+                    }
 
 
-                    }));
+                }));
 
-                
+
 
             }
             catch (Exception ex)
@@ -224,9 +348,14 @@ namespace AlSuitBuilder.Plugin
             if (!_actionQueue.Any())
                 return null;
 
+
+
+            // temporary stuffing allegiance in here
             var next = _actionQueue.FirstOrDefault(o => o.CanExecute());
             if (next == null)
+            {
                 return null;
+            }
 
             Console.WriteLine("Removing an action with id " + next.Id);
             _actionQueue.RemoveAll(o => o.Id == next.Id);
@@ -275,11 +404,54 @@ namespace AlSuitBuilder.Plugin
                     }
 
                 }
+                else
+                {
+                    if (_runningAllegiance && _allegianceTree.Any(o => !o.Scanned))
+                        _actionQueue.Add(new DelayedAction(500, () => RequestAllegianceInfo(_allegianceTree.First(o => !o.Scanned).Name)));
+                }
             }
             catch (Exception ex)
             {
                 Utils.LogException(ex);
             }
+
+        }
+
+
+        private void CheckFinalizeAllegiance(int counter)
+        {
+
+            Utils.WriteToChat("checking finalize for " + counter);
+
+            if (counter >= 1)
+            {
+                if (_allegianceTree.All(o => o.Scanned))
+                {
+                    _runningAllegiance = false;
+                    Utils.WriteToChat("[ONLINE] Exporting to csv...");
+
+
+                    var sb = new StringBuilder();
+                    foreach (var member in _allegianceTree.Where(o=>o.Online))
+                    {
+                        sb.AppendLine($"{member.Name},{member.Patron}");
+                    }
+                    File.WriteAllText(_allegianceFile, sb.ToString());
+                    Utils.WriteToChat("[ONLINE] Completed");
+
+                    _allegianceTree.Clear();
+                }
+               
+                return;
+            }
+
+            counter++;
+
+            if (_allegianceTree.All(o => o.Scanned))
+                AddAction(new DelayedAction(5000, () => { CheckFinalizeAllegiance(counter); }));
+           
+
+
 
         }
 
@@ -301,7 +473,7 @@ namespace AlSuitBuilder.Plugin
             if (!string.IsNullOrEmpty(SwapCharacter))
             {
                 var swapto = SwapCharacter;
-                AddAction(new DelayedAction(20000, () => { Utils.WriteLog("Delay Action Called");  LoginCharacter(swapto); }));
+                AddAction(new DelayedAction(20000, () => { Utils.WriteLog("Delay Action Called"); LoginCharacter(swapto); }));
                 SwapCharacter = String.Empty;
 
 
@@ -378,6 +550,8 @@ namespace AlSuitBuilder.Plugin
             _net.OnWelcomeMessage -= Net_OnWelcomeMessage;
             _net.OnGiveItemMessage -= Net_OnGiveItemMessage;
             _core.CommandLineText -= _core_CommandLineText;
+            _core.ChatBoxMessage -= _core_ChatBoxMessage;
+
 
         }
 
@@ -444,8 +618,8 @@ namespace AlSuitBuilder.Plugin
         internal int? ItemsWithRequirements(List<int> objectIds, List<int> requiredSpells, int materialId, int armorSetId, out bool triggeredId)
         {
 
-            var ids = String.Join(",", objectIds.Select(o=>o.ToString()).ToArray());
-            var reqIds = String.Join(",", requiredSpells.Select(o=>o.ToString()).ToArray());
+            var ids = String.Join(",", objectIds.Select(o => o.ToString()).ToArray());
+            var reqIds = String.Join(",", requiredSpells.Select(o => o.ToString()).ToArray());
 
             Utils.WriteToChat($"ItemRequirements: [IDs: { ids } ] [required: {reqIds}] [mat: {materialId}] [set: {armorSetId}]");
 
@@ -460,7 +634,7 @@ namespace AlSuitBuilder.Plugin
 
             foreach (var item in matches.Where(m => !m.HasIdData).ToList())
             {
-                
+
                 triggeredId = true;
                 CoreManager.Current.Actions.RequestId(item.Id);
             }
@@ -517,7 +691,7 @@ namespace AlSuitBuilder.Plugin
             return woc.FirstOrDefault() != null ? woc.First().Id : -1;
         }
 
-      
+
 
     }
 }

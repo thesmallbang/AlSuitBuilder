@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using AlSuitBuilder.Shared;
+using AlSuitBuilder.Server.Parsers;
 
 namespace AlSuitBuilder.Server.Actions
 {
@@ -13,6 +14,11 @@ namespace AlSuitBuilder.Server.Actions
     {
         private int _clientId;
         private string _suitName;
+        private List<IBuildFileParser> _parsers = new List<IBuildFileParser>() {
+            new VGISuitParser(),
+            new VGIGameParser(),
+            new MagParser(),
+        };
 
         public InitiateSuitAction(int clientId, string suitName)
         {
@@ -39,6 +45,7 @@ namespace AlSuitBuilder.Server.Actions
 
 
                 var filename = Path.Combine(Program.BuildDirectory, _suitName.Replace(".alb", "") + ".alb");
+
                 if (!File.Exists(filename))
                 {
                     responseMessage = "Suit not found " + filename;
@@ -46,69 +53,44 @@ namespace AlSuitBuilder.Server.Actions
                 else
                 {
 
-                    var lines = File.ReadAllLines(filename);
+
                     var workItems = new List<WorkItem>();
+
+                    var fileLines = File.ReadAllLines(filename);
+
                     var id = 0;
-                    foreach (var line in lines)
+                    foreach (var line in fileLines)
                     {
-
-                        var parts = line.Replace("Item on ", "").Split(':');
-                        if (parts.Length != 3)
-                            continue;
-
-                        var requirementsText = parts[2].Trim();
-                        var requirements = new List<string>();
-                        var workItem = new WorkItem()
+                        foreach (var parser in _parsers)
                         {
-                            Id = ++id,
-                            Character = parts[0].Trim(),
-                            ItemName = parts[1].Trim(),
-                        };
-                        if (requirementsText.EndsWith(")"))
-                        {
+                            var parseMsg = string.Empty;
 
-                            var startToTrim = requirementsText.LastIndexOf("(");
-
-                            requirementsText = requirementsText.Substring(0, startToTrim);
-                        }
-
-                        workItem.Requirements = requirementsText.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => Program.SpellData.SpellIdByName(x.Trim())).Where(p => p != -1).ToArray();
-
-                        foreach (var info in Shared.Dictionaries.MaterialInfo)
-                        {
-                            if (workItem.ItemName.StartsWith(info.Value))
+                            if (parser.IsValid(line, out parseMsg))
                             {
-                                workItem.MaterialId = info.Key;
-                                workItem.ItemName = workItem.ItemName.Substring(info.Value.Length + 1);
-                                break;
+                                var workItem = parser.Process(line);
+                                if (workItem != null)
+                                {
+                                    id++;
+                                    workItem.Id = id;
+                                    workItems.Add(workItem);
+                                    break;
+                                }
+                                
                             }
                         }
-
-                        foreach (var info in Shared.Dictionaries.SetInfo)
-                        {
-                            if (requirementsText.Contains(info.Value))
-                            {
-                                workItem.SetId = info.Key;
-                                break;
-                            }
-                        }
-
-
-
-                        workItems.Add(workItem);
-
                     }
-
+                  
 
                     if (!workItems.Any())
                     {
                         responseMessage = "Suit file was found but no valid items were found. Please make sure the format is correct";
                     }
                     else
-                    {
-
+                    {                       
                         foreach (var workItem in workItems)
+                        {
                             Utils.WriteWorkItemToLog($"Parsed successfully from suit", workItem, true);
+                        }
 
                         var characters = new List<string>();
                         foreach (var clientId in Program.GetClientIds())
@@ -118,6 +100,7 @@ namespace AlSuitBuilder.Server.Actions
                                 continue;
 
                             characters.Add(client.CharacterName);
+                            if (client.OtherCharacters != null && client.OtherCharacters.Any())
                             characters.AddRange(client.OtherCharacters);
                         }
 
@@ -154,8 +137,6 @@ namespace AlSuitBuilder.Server.Actions
 
                     }
                 }
-
-
             }
 
             Program.SendMessageToClient(_clientId, new InitiateBuildResponseMessage()
