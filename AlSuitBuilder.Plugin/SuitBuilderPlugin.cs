@@ -61,8 +61,10 @@ namespace AlSuitBuilder.Plugin
             try
             {
                 asm = Assembly.GetCallingAssembly().Location;
+                _directory = new FileInfo(asm).DirectoryName;
 
-            _directory = new FileInfo(asm).DirectoryName;
+              
+
             }
             catch (Exception ex)
             {
@@ -91,9 +93,10 @@ namespace AlSuitBuilder.Plugin
                 _net.Startup();
             }
 
-
         }
 
+        private List<string> ranks = new List<string>() { "Void Lord", "High King", "High Queen", "Grand Duke", "Grand Duchess", "Void Knight", "Void Lady" };
+        private List<string> whitelist = new List<string>();
 
         private string _lastPatron = string.Empty;
 
@@ -106,38 +109,72 @@ namespace AlSuitBuilder.Plugin
 
             var infoOn = "Allegiance information for ";
 
+            if (e.Text.Trim().EndsWith("not found."))
+            {
+                var match = _allegianceTree.First(o => !o.Scanned);
+                match.Scanned = true;
+                Utils.WriteToChat("Removing invalid tree item " + match.Name);
+                return;
+            }
 
             if (e.Text.StartsWith(infoOn))
             {
+                e.Eat = true;
                 var name = e.Text.Substring(infoOn.Length);
+                var rankSpaces = 0;
+                foreach (var rank in ranks)
+                {
+                    if (name.Trim().StartsWith(rank))
+                    {
+                        Utils.WriteToChat("found double rank " + rank);
+                        rankSpaces = 1;
+                        break;
+                    }
+                }
+
                 name = name.Substring(name.IndexOf(" ") + 1);
+
+                if (rankSpaces > 0)
+                    name = name.Substring(name.IndexOf(" ") + 1);
+
+
                 name = name.Substring(0, name.Length - 2);
                 
                 bool online = name.EndsWith("*");
-                name = name.Replace(" *", "");
+                name = name.Replace(" *", "").Trim();
 
                 var match = _allegianceTree.FirstOrDefault(o => o.Name == name);
                 if (match == null)
                 {
-                    Utils.WriteToChat("Invalid parsing...");
+                    Utils.WriteToChat("Invalid parsing..." + name);
                     return;
                 }
                 match.Scanned = true;
                 match.Online = online;
                 _lastPatron = match.Name;
+                AddAction(new DelayedAction(700, () => { CheckFinalizeAllegiance(0); }));
+
 
             }
 
             if (e.Text.StartsWith("      "))
             {
-                var name = e.Text.Trim();
+                var name = e.Text.Substring(6).Trim();
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var ranks = new List<string>() { "Void Lord", "High King", "High Queen", "Grand Duke", "Grand Duchess" };
+                
                     var rankSpaces = 0;
 
-                    if (ranks.Contains(name))
-                        rankSpaces = 1;
+                    
+                    foreach (var rank in ranks)
+                    {
+                        if (name.Trim().StartsWith(rank))
+                        {
+                            rankSpaces = 1;
+                            break;
+                        }
+                    }
+      
 
 
                     name = name.Substring(name.IndexOf(' ') + 1);
@@ -147,10 +184,15 @@ namespace AlSuitBuilder.Plugin
 
 
                     bool online = name.EndsWith("*");
-                    name = name.Replace(" *", "");
+                    name = name.Replace(" *", "").Trim();
 
-                    Utils.WriteToChat("Adding an allegiance member to track " + name);
-                    _allegianceTree.Add(new AllegianceTrackItem() { Name = name, Online = online, Scanned = false, Patron = _lastPatron });
+
+                    if (!_allegianceTree.Any(o => o.Name == name) && !whitelist.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    {
+                        Utils.WriteToChat("Adding an allegiance member to track " + name);
+                        _allegianceTree.Add(new AllegianceTrackItem() { Name = name, Online = online, Scanned = false, Patron = _lastPatron, Requested = DateTime.MinValue });
+                        e.Eat = true;
+                    }
                 }
             }
 
@@ -191,6 +233,12 @@ namespace AlSuitBuilder.Plugin
                         Utils.WriteToChat("Invalid format. /alb online filename.csv playerToStartWith");
                         return;
                     }
+                    whitelist.Clear();
+                    if (File.Exists(Path.Combine(_directory, "allegiance_whitelist.txt")))
+                    {
+                        whitelist.AddRange(File.ReadAllLines(Path.Combine(_directory, "allegiance_whitelist.txt")));
+                    }
+
                     _allegianceFile = parts[2].Trim();
                     if (!_allegianceFile.ToLower().EndsWith(".csv"))
                         _allegianceFile += ".csv";
@@ -234,6 +282,7 @@ namespace AlSuitBuilder.Plugin
             public bool Online { get; set; }
             public bool Scanned { get; set; }
             public string Patron { get; set; }
+            public DateTime Requested { get; set; }
         }
 
         private void RequestAllegianceInfo(string name)
@@ -241,10 +290,13 @@ namespace AlSuitBuilder.Plugin
             if (string.IsNullOrEmpty(name))
                 name = "Alastrius";
 
+
+
+
             Utils.WriteToChat($"[CMD] /allegiance info {name}");
             Utils.DispatchChatToBoxWithPluginIntercept($"/allegiance info {name}");
             // add in a fake delay to back up the request queue a bit
-            AddAction(new DelayedAction(2000, () => { CheckFinalizeAllegiance(0); }));
+
         }
 
         private void Net_OnGiveItemMessage(GiveItemMessage message)
@@ -407,7 +459,18 @@ namespace AlSuitBuilder.Plugin
                 else
                 {
                     if (_runningAllegiance && _allegianceTree.Any(o => !o.Scanned))
-                        _actionQueue.Add(new DelayedAction(500, () => RequestAllegianceInfo(_allegianceTree.First(o => !o.Scanned).Name)));
+                    {
+
+                        for (int i = 0; i < 3; i++)
+                        {
+                            var nextMember = _allegianceTree.Where(o => !o.Scanned && o.Requested < DateTime.Now.AddSeconds(-3)).Skip(i).FirstOrDefault();
+                            if (nextMember != null)
+                            {
+                                nextMember.Requested = DateTime.Now;
+                                _actionQueue.Add(new DelayedAction(10, () => RequestAllegianceInfo(nextMember.Name)));
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -431,12 +494,26 @@ namespace AlSuitBuilder.Plugin
                     Utils.WriteToChat("[ONLINE] Exporting to csv...");
 
 
-                    var sb = new StringBuilder();
+                    var sb = new StringBuilder("Member,Patron" + Environment.NewLine);
+                    
+                    
                     foreach (var member in _allegianceTree.Where(o=>o.Online))
                     {
                         sb.AppendLine($"{member.Name},{member.Patron}");
                     }
+
+                    sb.AppendLine("");
+                    sb.AppendLine("Offline:,");
+                    foreach (var member in _allegianceTree.Where(o => !o.Online))
+                    {
+                        sb.AppendLine($"{member.Name},{member.Patron}");
+                    }
+
                     File.WriteAllText(_allegianceFile, sb.ToString());
+
+
+
+
                     Utils.WriteToChat("[ONLINE] Completed");
 
                     _allegianceTree.Clear();
@@ -448,7 +525,7 @@ namespace AlSuitBuilder.Plugin
             counter++;
 
             if (_allegianceTree.All(o => o.Scanned))
-                AddAction(new DelayedAction(5000, () => { CheckFinalizeAllegiance(counter); }));
+                AddAction(new DelayedAction(3000, () => { CheckFinalizeAllegiance(counter); }));
            
 
 
